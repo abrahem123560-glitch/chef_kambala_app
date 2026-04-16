@@ -15,9 +15,14 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // طلب إذن الإشعارات
   await FirebaseMessaging.instance.requestPermission();
 
+  // جلب التوكن
   String? token = await FirebaseMessaging.instance.getToken();
+
+  // 🔥 الاشتراك بتوبيك العمال
+  await FirebaseMessaging.instance.subscribeToTopic("workers");
 
   runApp(MyApp(token: token));
 }
@@ -30,11 +35,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
+        appBar: AppBar(
+          title: const Text("Chef Kambala"),
+          backgroundColor: kPrimary,
+        ),
         body: Center(
           child: Text(
             "TOKEN:\n$token",
             textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14),
           ),
         ),
       ),
