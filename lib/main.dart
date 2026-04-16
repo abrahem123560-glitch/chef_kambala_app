@@ -10,6 +10,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,9 +27,28 @@ Future<void> main() async {
 
   // جلب التوكن
   String? token = await FirebaseMessaging.instance.getToken();
-  print("TOKEN: $token");
 
-  runApp(MyApp());
+  runApp(MyApp(token: token));
+}
+
+class MyApp extends StatelessWidget {
+  final String? token;
+
+  const MyApp({super.key, this.token});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text(
+            "TOKEN:\n$token",
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
