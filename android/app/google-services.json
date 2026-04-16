@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "64577390980",
+    "project_id": "chef-kambala",
+    "storage_bucket": "chef-kambala.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:64577390980:android:e6890fac386eeb3891b5d1",
+        "android_client_info": {
+          "package_name": "com.example.chef_kambala"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD23WQqi__JRMZIt1A3w-zg1HEA9bZ6RIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

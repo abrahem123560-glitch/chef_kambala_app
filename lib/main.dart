@@ -1,16 +1,25 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:convert';
 import 'dart:typed_data';
-
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await FirebaseMessaging.instance.requestPermission();
+  await FirebaseMessaging.instance.subscribeToTopic('orders');
+
   runApp(const ChefKambalaApp());
 }
-
 const Color kPrimary = Color(0xFFD98A3A);
 const Color kDark = Color(0xFF2B2118);
 const Color kSoft = Color(0xFFF6EFE8);
