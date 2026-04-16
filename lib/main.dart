@@ -1,3 +1,4 @@
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -15,10 +17,28 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // طلب إذن الإشعارات
   await FirebaseMessaging.instance.requestPermission();
-  await FirebaseMessaging.instance.subscribeToTopic('orders');
 
-  runApp(const ChefKambalaApp());
+  // جلب التوكن
+  String? token = await FirebaseMessaging.instance.getToken();
+  print("TOKEN: $token");
+
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text("App Running 🚀"),
+        ),
+      ),
+    );
+  }
+}
 }
 const Color kPrimary = Color(0xFFD98A3A);
 const Color kDark = Color(0xFF2B2118);
