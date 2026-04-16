@@ -8,12 +8,21 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'firebase_options.dart';
 
+// استقبال الإشعار بالخلفية
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("📩 إشعار بالخلفية: ${message.notification?.title}");
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // ربط مع background
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // طلب إذن الإشعارات
   await FirebaseMessaging.instance.requestPermission();
@@ -24,13 +33,41 @@ Future<void> main() async {
   // 🔥 الاشتراك بتوبيك العمال
   await FirebaseMessaging.instance.subscribeToTopic("workers");
 
+  print("🔥 TOKEN: $token");
+
   runApp(MyApp(token: token));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final String? token;
 
   const MyApp({super.key, this.token});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+
+  @override
+  void initState() {
+    super.initState();
+
+    // استقبال الإشعار والتطبيق مفتوح
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("📲 إشعار مباشر: ${message.notification?.title}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message.notification?.body ?? "وصل إشعار"),
+        ),
+      );
+    });
+
+    // عند الضغط على الإشعار
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("🚀 فتح من الإشعار");
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +80,7 @@ class MyApp extends StatelessWidget {
         ),
         body: Center(
           child: Text(
-            "TOKEN:\n$token",
+            "TOKEN:\n${widget.token}",
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 14),
           ),
