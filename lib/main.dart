@@ -16,14 +16,13 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // طلب إذن الإشعارات
   await FirebaseMessaging.instance.requestPermission();
 
-  // جلب التوكن
   String? token = await FirebaseMessaging.instance.getToken();
 
   runApp(MyApp(token: token));
 }
+
 class MyApp extends StatelessWidget {
   final String? token;
 
@@ -38,19 +37,6 @@ class MyApp extends StatelessWidget {
             "TOKEN:\n$token",
             textAlign: TextAlign.center,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text("App Running 🚀"),
         ),
       ),
     );
