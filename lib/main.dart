@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -42,11 +41,13 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-}
+
+// الألوان
 const Color kPrimary = Color(0xFFD98A3A);
 const Color kDark = Color(0xFF2B2118);
 const Color kSoft = Color(0xFFF6EFE8);
 
+// أيام الأسبوع
 const List<String> kWeekDays = [
   'الأحد',
   'الاثنين',
@@ -57,6 +58,7 @@ const List<String> kWeekDays = [
   'السبت',
 ];
 
+// الفلاتر
 const List<String> kFilterOptions = [
   'كل الطلبات',
   'اليوم',
