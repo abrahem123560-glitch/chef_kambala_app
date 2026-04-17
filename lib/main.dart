@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // 👈 هذا أضفناه
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -69,25 +70,48 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text("Chef Kambala"),
-          backgroundColor: kPrimary,
-        ),
-        body: Center(
-          child: Text(
-            "TOKEN:\n${widget.token}",
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14),
-          ),
-        ),
+@override
+Widget build(BuildContext context) {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: Scaffold(
+      appBar: AppBar(
+        title: const Text("Chef Kambala"),
+        backgroundColor: kPrimary,
       ),
-    );
-  }
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance.collection('orders').snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          var docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return const Center(child: Text("لا توجد طلبات"));
+          }
+
+          return ListView.builder(
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              var data = docs[index];
+
+              return Card(
+                margin: const EdgeInsets.all(10),
+                child: ListTile(
+                  title: Text(data['title'] ?? ''),
+                  subtitle: Text(
+                    "Status: ${data['status']} - Time: ${data['time']}",
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    ),
+  );
 }
 
 // الألوان
