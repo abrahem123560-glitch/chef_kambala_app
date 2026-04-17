@@ -48,11 +48,11 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final TextEditingController _orderController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
 
-    // استقبال الإشعار والتطبيق مفتوح
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print("📲 إشعار مباشر: ${message.notification?.title}");
 
@@ -66,24 +66,24 @@ class _MyAppState extends State<MyApp> {
       });
     });
 
-    // عند الضغط على الإشعار
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print("🚀 فتح من الإشعار");
     });
   }
 
-  @override
   Future<void> _addOrder() async {
-  if (_orderController.text.trim().isEmpty) return;
+    if (_orderController.text.trim().isEmpty) return;
 
-  await FirebaseFirestore.instance.collection('orders').add({
-    'title': _orderController.text.trim(),
-    'status': 'pending',
-    'time': DateTime.now().toString(),
-  });
+    await FirebaseFirestore.instance.collection('orders').add({
+      'title': _orderController.text.trim(),
+      'status': 'pending',
+      'time': DateTime.now().toString(),
+    });
 
-  _orderController.clear();
-}
+    _orderController.clear();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -92,64 +92,75 @@ class _MyAppState extends State<MyApp> {
           title: const Text("Chef Kambala"),
           backgroundColor: kPrimary,
         ),
- body: Column(
-  children: [
-    Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _orderController,
-              decoration: const InputDecoration(
-                hintText: "اكتب الطلب هنا",
-                border: OutlineInputBorder(),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _orderController,
+                      decoration: const InputDecoration(
+                        hintText: "اكتب الطلب هنا",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: _addOrder,
+                    child: const Text("إرسال"),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: _addOrder,
-            child: const Text("إرسال"),
-          ),
-        ],
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('orders')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  final docs = snapshot.data!.docs;
+
+                  if (docs.isEmpty) {
+                    return const Center(
+                      child: Text("لا توجد طلبات"),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final data =
+                          docs[index].data() as Map<String, dynamic>;
+
+                      return Card(
+                        margin: const EdgeInsets.all(10),
+                        child: ListTile(
+                          title: Text(data['title'] ?? ''),
+                          subtitle: Text(
+                            "Status: ${data['status'] ?? ''} - Time: ${data['time'] ?? ''}",
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-    Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('orders').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final docs = snapshot.data!.docs;
-
-          if (docs.isEmpty) {
-            return const Center(child: Text("لا توجد طلبات"));
-          }
-
-          return ListView.builder(
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
-
-              return Card(
-                margin: const EdgeInsets.all(10),
-                child: ListTile(
-                  title: Text(data['title'] ?? ''),
-                  subtitle: Text(
-                    "Status: ${data['status'] ?? ''} - Time: ${data['time'] ?? ''}",
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-    ),
-  ],
-),
+    );
+  }
+}
 
 // الألوان
 const Color kPrimary = Color(0xFFD98A3A);
