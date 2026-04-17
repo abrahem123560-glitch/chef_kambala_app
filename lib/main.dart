@@ -87,15 +87,15 @@ class _ChefKambalaAppState extends State<ChefKambalaApp> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(22),
               borderSide: const BorderSide(color: Color(0xFFB8A99C)),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(22),
               borderSide: const BorderSide(color: Color(0xFFB8A99C)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(22),
               borderSide: const BorderSide(color: kPrimaryDark, width: 1.5),
             ),
           ),
@@ -133,20 +133,21 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _userController = TextEditingController();
-  final _passController = TextEditingController();
-  bool _hidePassword = true;
+  final TextEditingController userController = TextEditingController();
+  final TextEditingController passController = TextEditingController();
+
+  bool showPassword = false;
 
   @override
   void dispose() {
-    _userController.dispose();
-    _passController.dispose();
+    userController.dispose();
+    passController.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    final user = _userController.text.trim();
-    final pass = _passController.text.trim();
+  Future<void> login() async {
+    final user = userController.text.trim();
+    final pass = passController.text.trim();
 
     if (user == kManagerUsername && pass == kManagerPassword) {
       await widget.onLogin('manager');
@@ -160,101 +161,98 @@ class _LoginPageState extends State<LoginPage> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('اسم المستخدم أو كلمة المرور غير صحيحة')),
+      const SnackBar(content: Text("بيانات الدخول غير صحيحة")),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xffF5F1EC),
       appBar: AppBar(
-        title: const Text('تسجيل الدخول'),
+        title: const Text("تسجيل الدخول"),
+        backgroundColor: const Color(0xffD0893A),
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: kCard,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+          padding: const EdgeInsets.all(16),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                )
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Chef Kambala",
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff3E2C23),
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Chef Kambala',
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
-                      color: kDark,
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: userController,
+                  decoration: InputDecoration(
+                    hintText: "اسم المستخدم",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: _userController,
-                    decoration: const InputDecoration(
-                      labelText: 'اسم المستخدم',
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: passController,
+                  obscureText: !showPassword,
+                  decoration: InputDecoration(
+                    hintText: "كلمة المرور",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        showPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          showPassword = !showPassword;
+                        });
+                      },
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: _passController,
-                    obscureText: _hidePassword,
-                    decoration: InputDecoration(
-                      labelText: 'كلمة المرور',
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() => _hidePassword = !_hidePassword);
-                        },
-                        icon: Icon(
-                          _hidePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xffD0893A),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 58,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: kPrimary,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
-                        ),
-                      ),
-                      onPressed: _submit,
-                      child: const Text(
-                        'دخول',
-                        style: TextStyle(fontSize: 24),
-                      ),
+                    child: const Text(
+                      "دخول",
+                      style: TextStyle(fontSize: 18, color: Colors.black),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'حساب المدير: manager / 1234',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'حساب العمال: workers / 1111',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
