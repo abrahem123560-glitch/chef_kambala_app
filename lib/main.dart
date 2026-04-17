@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 👈 هذا أضفناه
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -11,7 +11,9 @@ import 'firebase_options.dart';
 
 // استقبال الإشعار بالخلفية
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   print("📩 إشعار بالخلفية: ${message.notification?.title}");
 }
 
@@ -22,16 +24,12 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ربط مع background
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // طلب إذن الإشعارات
   await FirebaseMessaging.instance.requestPermission();
 
-  // جلب التوكن
   String? token = await FirebaseMessaging.instance.getToken();
 
-  // 🔥 الاشتراك بتوبيك العمال
   await FirebaseMessaging.instance.subscribeToTopic("workers");
 
   print("🔥 TOKEN: $token");
@@ -49,7 +47,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   @override
   void initState() {
     super.initState();
@@ -57,11 +54,15 @@ class _MyAppState extends State<MyApp> {
     // استقبال الإشعار والتطبيق مفتوح
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print("📲 إشعار مباشر: ${message.notification?.title}");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message.notification?.body ?? "وصل إشعار"),
-        ),
-      );
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message.notification?.body ?? "وصل إشعار"),
+          ),
+        );
+      });
     });
 
     // عند الضغط على الإشعار
@@ -70,48 +71,49 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-@override
-Widget build(BuildContext context) {
-  return MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: Scaffold(
-      appBar: AppBar(
-        title: const Text("Chef Kambala"),
-        backgroundColor: kPrimary,
-      ),
-      body: StreamBuilder(
-        stream: FirebaseFirestore.instance.collection('orders').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text("Chef Kambala"),
+          backgroundColor: kPrimary,
+        ),
+        body: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('orders').snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          var docs = snapshot.data!.docs;
+            final docs = snapshot.data!.docs;
 
-          if (docs.isEmpty) {
-            return const Center(child: Text("لا توجد طلبات"));
-          }
+            if (docs.isEmpty) {
+              return const Center(child: Text("لا توجد طلبات"));
+            }
 
-          return ListView.builder(
-            itemCount: docs.length,
-            itemBuilder: (context, index) {
-              var data = docs[index];
+            return ListView.builder(
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final data = docs[index].data() as Map<String, dynamic>;
 
-              return Card(
-                margin: const EdgeInsets.all(10),
-                child: ListTile(
-                  title: Text(data['title'] ?? ''),
-                  subtitle: Text(
-                    "Status: ${data['status']} - Time: ${data['time']}",
+                return Card(
+                  margin: const EdgeInsets.all(10),
+                  child: ListTile(
+                    title: Text(data['title'] ?? ''),
+                    subtitle: Text(
+                      "Status: ${data['status'] ?? ''} - Time: ${data['time'] ?? ''}",
+                    ),
                   ),
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            );
+          },
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 // الألوان
@@ -144,6 +146,7 @@ const List<String> kFilterOptions = [
   'الجمعة',
   'السبت',
 ];
+
 
 class ChefKambalaApp extends StatelessWidget {
   const ChefKambalaApp({super.key});
