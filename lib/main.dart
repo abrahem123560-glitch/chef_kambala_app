@@ -537,52 +537,61 @@ return ListView.builder(
               runSpacing: 8,
               children: [
 
-                // 👷 العامل
-                if (!isManager && status == 'pending')
-                  ElevatedButton.icon(
-                    onPressed: () => _updateStatus(doc.id, 'accepted'),
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('استلام'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                    ),
-                  ),
+// 👷 العامل
+if (!isManager && status == 'pending')
+  ElevatedButton.icon(
+    onPressed: () => _updateStatus(doc.id, 'accepted'),
+    icon: const Icon(Icons.play_arrow),
+    label: const Text('استلام'),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.blue,
+    ),
+  ),
 
-                if (!isManager && status != 'done')
-                  ElevatedButton.icon(
-                    onPressed: () => _updateStatus(doc.id, 'done'),
-                    icon: const Icon(Icons.check),
-                    label: const Text('تم'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
-                  ),
+if (!isManager && status != 'done')
+  ElevatedButton.icon(
+    onPressed: () => _updateStatus(doc.id, 'done'),
+    icon: const Icon(Icons.check),
+    label: const Text('تم'),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.green,
+    ),
+  ),
 
-                // 👨‍💼 المدير
-                if (isManager)
-                  ElevatedButton.icon(
-                    onPressed: () => _updateStatus(doc.id, 'pending'),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('إرجاع'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                    ),
-                  ),
+// 👨‍💼 المدير
+if (isManager)
+  ElevatedButton.icon(
+    onPressed: () => _updateStatus(doc.id, 'pending'),
+    icon: const Icon(Icons.refresh),
+    label: const Text('إرجاع'),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.orange,
+    ),
+  ),
 
-                if (isManager)
-                  ElevatedButton.icon(
-                    onPressed: () => _deleteOrder(doc.id),
-                    icon: const Icon(Icons.delete),
-                    label: const Text('حذف'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                  ),
-              ],
+if (isManager)
+  ElevatedButton.icon(
+    onPressed: () => _deleteOrder(doc.id),
+    icon: const Icon(Icons.delete),
+    label: const Text('حذف'),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.red,
+    ),
+  ),
+        ],
+      ),
+    ],
+  ),
+),
+);
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
     );
-  },
-);
+  }
+}
