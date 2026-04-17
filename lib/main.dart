@@ -18,8 +18,10 @@ const String kWorkersUsername = 'workers';
 const String kWorkersPassword = '1111';
 
 const Color kPrimary = Color(0xFFD98A3A);
-const Color kDark = Color(0xFF2B2118);
-const Color kSoft = Color(0xFFF6EFE8);
+const Color kPrimaryDark = Color(0xFFB96E27);
+const Color kDark = Color(0xFF33261D);
+const Color kSoft = Color(0xFFF4EEE8);
+const Color kCard = Colors.white;
 
 class ChefKambalaApp extends StatefulWidget {
   const ChefKambalaApp({super.key});
@@ -35,55 +37,75 @@ class _ChefKambalaAppState extends State<ChefKambalaApp> {
   @override
   void initState() {
     super.initState();
-    _loadSavedRole();
+    _loadRole();
   }
 
-  Future<void> _loadSavedRole() async {
+  Future<void> _loadRole() async {
     final prefs = await SharedPreferences.getInstance();
     final savedRole = prefs.getString('role');
-
     setState(() {
       _role = savedRole;
       _loading = false;
     });
   }
 
-  Future<void> _loginAs(String role) async {
+  Future<void> _login(String role) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('role', role);
-
-    setState(() {
-      _role = role;
-    });
+    setState(() => _role = role);
   }
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('role');
-
-    setState(() {
-      _role = null;
-    });
+    setState(() => _role = null);
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Chef Kambala',
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: kSoft,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: kPrimary,
-          primary: kPrimary,
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Chef Kambala',
+        theme: ThemeData(
+          useMaterial3: true,
+          scaffoldBackgroundColor: kSoft,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: kPrimary,
+            primary: kPrimary,
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: kPrimary,
+            foregroundColor: Colors.black,
+            centerTitle: false,
+            elevation: 0,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: Color(0xFFB8A99C)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: Color(0xFFB8A99C)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: kPrimaryDark, width: 1.5),
+            ),
+          ),
         ),
+        home: _loading
+            ? const SplashPage()
+            : _role == null
+                ? LoginPage(onLogin: _login)
+                : HomePage(role: _role!, onLogout: _logout),
       ),
-      home: _loading
-          ? const SplashPage()
-          : (_role == null
-              ? LoginPage(onLogin: _loginAs)
-              : HomePage(role: _role!, onLogout: _logout)),
     );
   }
 }
@@ -95,7 +117,7 @@ class SplashPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(color: kPrimaryDark),
       ),
     );
   }
@@ -111,8 +133,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _userController = TextEditingController();
-  final TextEditingController _passController = TextEditingController();
+  final _userController = TextEditingController();
+  final _passController = TextEditingController();
   bool _hidePassword = true;
 
   @override
@@ -147,81 +169,91 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('تسجيل الدخول'),
-        backgroundColor: kPrimary,
-        foregroundColor: Colors.black,
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(20),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: Card(
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: kCard,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Chef Kambala',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: kDark,
-                      ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Chef Kambala',
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      color: kDark,
                     ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _userController,
-                      decoration: const InputDecoration(
-                        labelText: 'اسم المستخدم',
-                        border: OutlineInputBorder(),
-                      ),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _userController,
+                    decoration: const InputDecoration(
+                      labelText: 'اسم المستخدم',
                     ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _passController,
-                      obscureText: _hidePassword,
-                      decoration: InputDecoration(
-                        labelText: 'كلمة المرور',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _hidePassword = !_hidePassword;
-                            });
-                          },
-                          icon: Icon(
-                            _hidePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _passController,
+                    obscureText: _hidePassword,
+                    decoration: InputDecoration(
+                      labelText: 'كلمة المرور',
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() => _hidePassword = !_hidePassword);
+                        },
+                        icon: Icon(
+                          _hidePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: kPrimary,
-                          foregroundColor: Colors.black,
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: kPrimary,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
                         ),
-                        onPressed: _submit,
-                        child: const Text('دخول'),
+                      ),
+                      onPressed: _submit,
+                      child: const Text(
+                        'دخول',
+                        style: TextStyle(fontSize: 24),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'حساب المدير: manager / 1234\nحساب العمال: workers / 1111',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'حساب المدير: manager / 1234',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'حساب العمال: workers / 1111',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
               ),
             ),
           ),
@@ -246,8 +278,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _detailsController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _detailsController = TextEditingController();
 
   bool get isManager => widget.role == 'manager';
 
@@ -310,10 +342,10 @@ class _HomePageState extends State<HomePage> {
 
   String _statusLabel(String status) {
     switch (status) {
-      case 'done':
-        return 'مكتمل';
       case 'accepted':
         return 'قيد التنفيذ';
+      case 'done':
+        return 'مكتمل';
       default:
         return 'بانتظار العمال';
     }
@@ -321,37 +353,255 @@ class _HomePageState extends State<HomePage> {
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'done':
-        return Colors.green;
       case 'accepted':
         return Colors.blue;
+      case 'done':
+        return Colors.green;
       default:
         return Colors.orange;
+    }
+  }
+
+  Color _cardColor(String status) {
+    switch (status) {
+      case 'accepted':
+        return Colors.blue.shade50;
+      case 'done':
+        return Colors.green.shade50;
+      default:
+        return Colors.white;
     }
   }
 
   String _formatTimestamp(dynamic value) {
     if (value == null) return '';
     if (value is! Timestamp) return value.toString();
-
     final dt = value.toDate();
     final y = dt.year.toString().padLeft(4, '0');
     final m = dt.month.toString().padLeft(2, '0');
     final d = dt.day.toString().padLeft(2, '0');
     final h = dt.hour.toString().padLeft(2, '0');
     final min = dt.minute.toString().padLeft(2, '0');
-    return '$y-$m-$d  $h:$min';
+    return '$h:$min  $d-$m-$y';
+  }
+
+  Widget _buildHeaderCard() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kCard,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(
+              labelText: 'عنوان الطلب',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _detailsController,
+            minLines: 4,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'تفاصيل الطلب',
+              alignLabelWithHint: true,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: kPrimary,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              onPressed: _addOrder,
+              child: const Text(
+                'إرسال الطلب',
+                style: TextStyle(fontSize: 24),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(
+    BuildContext context,
+    QueryDocumentSnapshot doc,
+    Map<String, dynamic> data,
+  ) {
+    final title = data['title']?.toString() ?? '';
+    final details = data['details']?.toString() ?? '';
+    final status = data['status']?.toString() ?? 'pending';
+    final createdAt = _formatTimestamp(data['createdAt']);
+    final updatedAt = _formatTimestamp(data['updatedAt']);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _cardColor(status),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title.isNotEmpty)
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                color: kDark,
+              ),
+            ),
+          if (details.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              details,
+              style: const TextStyle(
+                fontSize: 20,
+                color: kDark,
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _statusColor(status).withOpacity(.13),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  _statusLabel(status),
+                  style: TextStyle(
+                    color: _statusColor(status),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              if (createdAt.isNotEmpty)
+                Text(
+                  'أنشئ: $createdAt',
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 16,
+                  ),
+                ),
+              if (updatedAt.isNotEmpty)
+                Text(
+                  'آخر تحديث: $updatedAt',
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontSize: 16,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              if (!isManager && status == 'pending')
+                ElevatedButton.icon(
+                  onPressed: () => _updateStatus(doc.id, 'accepted'),
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('استلام'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              if (!isManager && status != 'done')
+                ElevatedButton.icon(
+                  onPressed: () => _updateStatus(doc.id, 'done'),
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('تم الإنجاز'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              if (isManager)
+                ElevatedButton.icon(
+                  onPressed: () => _updateStatus(doc.id, 'pending'),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('إرجاع للانتظار'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              if (isManager)
+                ElevatedButton.icon(
+                  onPressed: () => _deleteOrder(doc.id),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('حذف'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          isManager ? 'لوحة المدير' : 'لوحة العمال',
-        ),
-        backgroundColor: kPrimary,
-        foregroundColor: Colors.black,
+        title: Text(isManager ? 'لوحة المدير' : 'لوحة العمال'),
         actions: [
           IconButton(
             onPressed: widget.onLogout,
@@ -362,52 +612,7 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: Column(
           children: [
-            if (isManager)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
-                child: Card(
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: _titleController,
-                          decoration: const InputDecoration(
-                            labelText: 'عنوان الطلب',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _detailsController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'تفاصيل الطلب',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: kPrimary,
-                              foregroundColor: Colors.black,
-                            ),
-                            onPressed: _addOrder,
-                            child: const Text('إرسال الطلب'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            if (isManager) _buildHeaderCard(),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -429,7 +634,7 @@ class _HomePageState extends State<HomePage> {
 
                   if (!snapshot.hasData) {
                     return const Center(
-                      child: CircularProgressIndicator(),
+                      child: CircularProgressIndicator(color: kPrimaryDark),
                     );
                   }
 
@@ -439,151 +644,18 @@ class _HomePageState extends State<HomePage> {
                     return const Center(
                       child: Text(
                         'لا توجد طلبات حالياً',
-                        style: TextStyle(fontSize: 18),
+                        style: TextStyle(fontSize: 22),
                       ),
                     );
                   }
 
-return ListView.builder(
-  padding: const EdgeInsets.fromLTRB(10, 6, 10, 16),
-  itemCount: docs.length,
-  itemBuilder: (context, index) {
-    final doc = docs[index];
-    final data = doc.data() as Map<String, dynamic>;
-
-    final title = data['title']?.toString() ?? '';
-    final details = data['details']?.toString() ?? '';
-    final status = data['status']?.toString() ?? 'pending';
-    final createdAt = _formatTimestamp(data['createdAt']);
-    final updatedAt = _formatTimestamp(data['updatedAt']);
-
-    return Card(
-      elevation: 3,
-      color: status == 'done'
-          ? Colors.green.shade50
-          : status == 'accepted'
-              ? Colors.blue.shade50
-              : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
-
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            /// 🔥 العنوان
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: kDark,
-              ),
-            ),
-
-            if (details.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(details, style: const TextStyle(fontSize: 16)),
-            ],
-
-            const SizedBox(height: 10),
-
-            /// الحالة + الوقت
-            Wrap(
-              spacing: 10,
-              runSpacing: 8,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _statusColor(status).withOpacity(.15),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    _statusLabel(status),
-                    style: TextStyle(
-                      color: _statusColor(status),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                if (createdAt.isNotEmpty)
-                  Text(
-                    'أنشئ: $createdAt',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-
-                if (updatedAt.isNotEmpty)
-                  Text(
-                    'آخر تحديث: $updatedAt',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            /// 🔥 الأزرار
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-
-// 👷 العامل
-if (!isManager && status == 'pending')
-  ElevatedButton.icon(
-    onPressed: () => _updateStatus(doc.id, 'accepted'),
-    icon: const Icon(Icons.play_arrow),
-    label: const Text('استلام'),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blue,
-    ),
-  ),
-
-if (!isManager && status != 'done')
-  ElevatedButton.icon(
-    onPressed: () => _updateStatus(doc.id, 'done'),
-    icon: const Icon(Icons.check),
-    label: const Text('تم'),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.green,
-    ),
-  ),
-
-// 👨‍💼 المدير
-if (isManager)
-  ElevatedButton.icon(
-    onPressed: () => _updateStatus(doc.id, 'pending'),
-    icon: const Icon(Icons.refresh),
-    label: const Text('إرجاع'),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.orange,
-    ),
-  ),
-
-if (isManager)
-  ElevatedButton.icon(
-    onPressed: () => _deleteOrder(doc.id),
-    icon: const Icon(Icons.delete),
-    label: const Text('حذف'),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.red,
-    ),
-  ),
-        ],
-      ),
-    ],
-  ),
-),
-);
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(0, 4, 0, 20),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      return _buildOrderCard(context, doc, data);
                     },
                   );
                 },
