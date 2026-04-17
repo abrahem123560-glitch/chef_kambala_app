@@ -599,6 +599,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
-const Color kPrimary = Color(0xFFD98A3A);
-const Color kSoft = Color(0xFFF6EFE8);
