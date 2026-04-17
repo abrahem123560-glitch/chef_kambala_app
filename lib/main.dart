@@ -1,39 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
-
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  print("📩 Background notification: ${message.notification?.title}");
-}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  FirebaseMessaging.onBackgroundMessage(
-    _firebaseMessagingBackgroundHandler,
-  );
-
-  await FirebaseMessaging.instance.requestPermission();
-
-  final token = await FirebaseMessaging.instance.getToken();
-  await FirebaseMessaging.instance.subscribeToTopic("workers");
-
-  print("🔥 TOKEN: $token");
-
-  runApp(const MyApp());
+  runApp(const ChefKambalaApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+const String kManagerUsername = 'manager';
+const String kManagerPassword = '1234';
+const String kWorkersUsername = 'workers';
+const String kWorkersPassword = '1111';
+
+const Color kPrimary = Color(0xFFD98A3A);
+const Color kDark = Color(0xFF2B2118);
+const Color kSoft = Color(0xFFF6EFE8);
+
+class ChefKambalaApp extends StatefulWidget {
+  const ChefKambalaApp({super.key});
+
+  @override
+  State<ChefKambalaApp> createState() => _ChefKambalaAppState();
+}
+
+class _ChefKambalaAppState extends State<ChefKambalaApp> {
+  bool _loading = true;
+  String? _role;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedRole();
+  }
+
+  Future<void> _loadSavedRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedRole = prefs.getString('role');
+
+    setState(() {
+      _role = savedRole;
+      _loading = false;
+    });
+  }
+
+  Future<void> _loginAs(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('role', role);
+
+    setState(() {
+      _role = role;
+    });
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('role');
+
+    setState(() {
+      _role = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,91 +72,230 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Chef Kambala',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: kPrimary),
-        scaffoldBackgroundColor: kSoft,
         useMaterial3: true,
+        scaffoldBackgroundColor: kSoft,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kPrimary,
+          primary: kPrimary,
+        ),
       ),
-      home: const OrdersPage(),
+      home: _loading
+          ? const SplashPage()
+          : (_role == null
+              ? LoginPage(onLogin: _loginAs)
+              : HomePage(role: _role!, onLogout: _logout)),
     );
   }
 }
 
-class OrdersPage extends StatefulWidget {
-  const OrdersPage({super.key});
+class SplashPage extends StatelessWidget {
+  const SplashPage({super.key});
 
   @override
-  State<OrdersPage> createState() => _OrdersPageState();
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
 }
 
-class _OrdersPageState extends State<OrdersPage> {
-  final TextEditingController _orderController = TextEditingController();
+class LoginPage extends StatefulWidget {
+  final Future<void> Function(String role) onLogin;
+
+  const LoginPage({super.key, required this.onLogin});
 
   @override
-  void initState() {
-    super.initState();
+  State<LoginPage> createState() => _LoginPageState();
+}
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (!mounted) return;
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message.notification?.body ?? "وصل إشعار جديد"),
-          ),
-        );
-      });
-    });
-
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print("🚀 Opened from notification");
-    });
-  }
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _userController = TextEditingController();
+  final TextEditingController _passController = TextEditingController();
+  bool _hidePassword = true;
 
   @override
   void dispose() {
-    _orderController.dispose();
+    _userController.dispose();
+    _passController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final user = _userController.text.trim();
+    final pass = _passController.text.trim();
+
+    if (user == kManagerUsername && pass == kManagerPassword) {
+      await widget.onLogin('manager');
+      return;
+    }
+
+    if (user == kWorkersUsername && pass == kWorkersPassword) {
+      await widget.onLogin('worker');
+      return;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('اسم المستخدم أو كلمة المرور غير صحيحة')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('تسجيل الدخول'),
+        backgroundColor: kPrimary,
+        foregroundColor: Colors.black,
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(18),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 450),
+            child: Card(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Chef Kambala',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: kDark,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _userController,
+                      decoration: const InputDecoration(
+                        labelText: 'اسم المستخدم',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _passController,
+                      obscureText: _hidePassword,
+                      decoration: InputDecoration(
+                        labelText: 'كلمة المرور',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _hidePassword = !_hidePassword;
+                            });
+                          },
+                          icon: Icon(
+                            _hidePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: kPrimary,
+                          foregroundColor: Colors.black,
+                        ),
+                        onPressed: _submit,
+                        child: const Text('دخول'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'حساب المدير: manager / 1234\nحساب العمال: workers / 1111',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  final String role;
+  final Future<void> Function() onLogout;
+
+  const HomePage({
+    super.key,
+    required this.role,
+    required this.onLogout,
+  });
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _detailsController = TextEditingController();
+
+  bool get isManager => widget.role == 'manager';
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _detailsController.dispose();
     super.dispose();
   }
 
   Future<void> _addOrder() async {
-    final text = _orderController.text.trim();
-    if (text.isEmpty) return;
+    final title = _titleController.text.trim();
+    final details = _detailsController.text.trim();
+
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اكتب عنوان الطلب أولاً')),
+      );
+      return;
+    }
 
     await FirebaseFirestore.instance.collection('orders').add({
-      'title': text,
+      'title': title,
+      'details': details,
       'status': 'pending',
-      'createdAt': Timestamp.now(),
-      'time': DateTime.now().toString(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'createdByRole': widget.role,
     });
 
-    _orderController.clear();
+    _titleController.clear();
+    _detailsController.clear();
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("تم إرسال الطلب")),
+      const SnackBar(content: Text('تم إرسال الطلب بنجاح')),
     );
   }
 
-  Future<void> _markDone(String docId) async {
+  Future<void> _updateStatus(String docId, String status) async {
     await FirebaseFirestore.instance.collection('orders').doc(docId).update({
-      'status': 'done',
+      'status': status,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("تم تحويل الطلب إلى مكتمل")),
-    );
-  }
-
-  Future<void> _markPending(String docId) async {
-    await FirebaseFirestore.instance.collection('orders').doc(docId).update({
-      'status': 'pending',
-    });
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("تم إرجاع الطلب إلى قيد الانتظار")),
+      SnackBar(content: Text('تم تحديث الحالة إلى: ${_statusLabel(status)}')),
     );
   }
 
@@ -134,74 +304,110 @@ class _OrdersPageState extends State<OrdersPage> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("تم حذف الطلب")),
+      const SnackBar(content: Text('تم حذف الطلب')),
     );
   }
 
-  Color _statusColor(String status) {
-    if (status == 'done') return Colors.green;
-    return Colors.orange;
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'done':
+        return 'مكتمل';
+      case 'accepted':
+        return 'قيد التنفيذ';
+      default:
+        return 'بانتظار العمال';
+    }
   }
 
-  String _statusText(String status) {
-    if (status == 'done') return 'مكتمل';
-    return 'قيد الانتظار';
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'done':
+        return Colors.green;
+      case 'accepted':
+        return Colors.blue;
+      default:
+        return Colors.orange;
+    }
+  }
+
+  String _formatTimestamp(dynamic value) {
+    if (value == null) return '';
+    if (value is! Timestamp) return value.toString();
+
+    final dt = value.toDate();
+    final y = dt.year.toString().padLeft(4, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    final h = dt.hour.toString().padLeft(2, '0');
+    final min = dt.minute.toString().padLeft(2, '0');
+    return '$y-$m-$d  $h:$min';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Chef Kambala"),
+        title: Text(
+          isManager ? 'لوحة المدير' : 'لوحة العمال',
+        ),
         backgroundColor: kPrimary,
         foregroundColor: Colors.black,
-        centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: widget.onLogout,
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _orderController,
-                      decoration: InputDecoration(
-                        hintText: "اكتب الطلب هنا",
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
+            if (isManager)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+                child: Card(
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: _titleController,
+                          decoration: const InputDecoration(
+                            labelText: 'عنوان الطلب',
+                            border: OutlineInputBorder(),
+                          ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _detailsController,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'تفاصيل الطلب',
+                            border: OutlineInputBorder(),
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 14,
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: kPrimary,
+                              foregroundColor: Colors.black,
+                            ),
+                            onPressed: _addOrder,
+                            child: const Text('إرسال الطلب'),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    height: 54,
-                    child: FilledButton(
-                      onPressed: _addOrder,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: kPrimary,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      child: const Text("إرسال"),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -214,7 +420,7 @@ class _OrdersPageState extends State<OrdersPage> {
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Text(
-                          "صار خطأ بقراءة الطلبات:\n${snapshot.error}",
+                          'صار خطأ:\n${snapshot.error}',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -232,7 +438,7 @@ class _OrdersPageState extends State<OrdersPage> {
                   if (docs.isEmpty) {
                     return const Center(
                       child: Text(
-                        "لا توجد طلبات حالياً",
+                        'لا توجد طلبات حالياً',
                         style: TextStyle(fontSize: 18),
                       ),
                     );
@@ -246,12 +452,14 @@ class _OrdersPageState extends State<OrdersPage> {
                       final data = doc.data() as Map<String, dynamic>;
 
                       final title = data['title']?.toString() ?? '';
+                      final details = data['details']?.toString() ?? '';
                       final status = data['status']?.toString() ?? 'pending';
-                      final time = data['time']?.toString() ?? '';
+                      final createdAt = _formatTimestamp(data['createdAt']);
+                      final updatedAt = _formatTimestamp(data['updatedAt']);
 
                       return Card(
                         elevation: 2,
-                        color: Colors.white.withOpacity(0.75),
+                        color: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -269,10 +477,21 @@ class _OrdersPageState extends State<OrdersPage> {
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,
+                                  color: kDark,
                                 ),
                               ),
+                              if (details.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  details,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ],
                               const SizedBox(height: 10),
-                              Row(
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(
@@ -284,24 +503,29 @@ class _OrdersPageState extends State<OrdersPage> {
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
-                                      _statusText(status),
+                                      _statusLabel(status),
                                       style: TextStyle(
                                         color: _statusColor(status),
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      time,
+                                  if (createdAt.isNotEmpty)
+                                    Text(
+                                      'أنشئ: $createdAt',
                                       style: const TextStyle(
                                         color: Colors.black54,
                                         fontSize: 12,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
+                                  if (updatedAt.isNotEmpty)
+                                    Text(
+                                      'آخر تحديث: $updatedAt',
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                 ],
                               ),
                               const SizedBox(height: 14),
@@ -309,35 +533,55 @@ class _OrdersPageState extends State<OrdersPage> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
-                                  if (status != 'done')
+                                  if (!isManager && status == 'pending')
                                     ElevatedButton.icon(
-                                      onPressed: () => _markDone(doc.id),
+                                      onPressed: () => _updateStatus(
+                                        doc.id,
+                                        'accepted',
+                                      ),
+                                      icon: const Icon(Icons.play_arrow),
+                                      label: const Text('استلام الطلب'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  if (!isManager && status != 'done')
+                                    ElevatedButton.icon(
+                                      onPressed: () => _updateStatus(
+                                        doc.id,
+                                        'done',
+                                      ),
                                       icon: const Icon(Icons.check_circle_outline),
-                                      label: const Text("تم الإنجاز"),
+                                      label: const Text('تم الإنجاز'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green,
                                         foregroundColor: Colors.white,
                                       ),
                                     ),
-                                  if (status == 'done')
+                                  if (isManager)
                                     ElevatedButton.icon(
-                                      onPressed: () => _markPending(doc.id),
+                                      onPressed: () => _updateStatus(
+                                        doc.id,
+                                        'pending',
+                                      ),
                                       icon: const Icon(Icons.refresh),
-                                      label: const Text("إرجاع للانتظار"),
+                                      label: const Text('إرجاع للانتظار'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.orange,
                                         foregroundColor: Colors.white,
                                       ),
                                     ),
-                                  ElevatedButton.icon(
-                                    onPressed: () => _deleteOrder(doc.id),
-                                    icon: const Icon(Icons.delete_outline),
-                                    label: const Text("حذف"),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
+                                  if (isManager)
+                                    ElevatedButton.icon(
+                                      onPressed: () => _deleteOrder(doc.id),
+                                      icon: const Icon(Icons.delete_outline),
+                                      label: const Text('حذف'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ],
@@ -356,7 +600,5 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 }
 
-// الألوان
 const Color kPrimary = Color(0xFFD98A3A);
-const Color kDark = Color(0xFF2B2118);
 const Color kSoft = Color(0xFFF6EFE8);
