@@ -444,158 +444,145 @@ class _HomePageState extends State<HomePage> {
                     );
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(10, 6, 10, 16),
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final doc = docs[index];
-                      final data = doc.data() as Map<String, dynamic>;
+return ListView.builder(
+  padding: const EdgeInsets.fromLTRB(10, 6, 10, 16),
+  itemCount: docs.length,
+  itemBuilder: (context, index) {
+    final doc = docs[index];
+    final data = doc.data() as Map<String, dynamic>;
 
-                      final title = data['title']?.toString() ?? '';
-                      final details = data['details']?.toString() ?? '';
-                      final status = data['status']?.toString() ?? 'pending';
-                      final createdAt = _formatTimestamp(data['createdAt']);
-                      final updatedAt = _formatTimestamp(data['updatedAt']);
+    final title = data['title']?.toString() ?? '';
+    final details = data['details']?.toString() ?? '';
+    final status = data['status']?.toString() ?? 'pending';
+    final createdAt = _formatTimestamp(data['createdAt']);
+    final updatedAt = _formatTimestamp(data['updatedAt']);
 
-                      return Card(
-                        elevation: 2,
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 7,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: kDark,
-                                ),
-                              ),
-                              if (details.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  details,
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              ],
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 8,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _statusColor(status).withOpacity(.12),
-                                      borderRadius: BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      _statusLabel(status),
-                                      style: TextStyle(
-                                        color: _statusColor(status),
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                  if (createdAt.isNotEmpty)
-                                    Text(
-                                      'أنشئ: $createdAt',
-                                      style: const TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  if (updatedAt.isNotEmpty)
-                                    Text(
-                                      'آخر تحديث: $updatedAt',
-                                      style: const TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: [
-                                  if (!isManager && status == 'pending')
-                                    ElevatedButton.icon(
-                                      onPressed: () => _updateStatus(
-                                        doc.id,
-                                        'accepted',
-                                      ),
-                                      icon: const Icon(Icons.play_arrow),
-                                      label: const Text('استلام الطلب'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  if (!isManager && status != 'done')
-                                    ElevatedButton.icon(
-                                      onPressed: () => _updateStatus(
-                                        doc.id,
-                                        'done',
-                                      ),
-                                      icon: const Icon(Icons.check_circle_outline),
-                                      label: const Text('تم الإنجاز'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  if (isManager)
-                                    ElevatedButton.icon(
-                                      onPressed: () => _updateStatus(
-                                        doc.id,
-                                        'pending',
-                                      ),
-                                      icon: const Icon(Icons.refresh),
-                                      label: const Text('إرجاع للانتظار'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.orange,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  if (isManager)
-                                    ElevatedButton.icon(
-                                      onPressed: () => _deleteOrder(doc.id),
-                                      icon: const Icon(Icons.delete_outline),
-                                      label: const Text('حذف'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+    return Card(
+      elevation: 3,
+      color: status == 'done'
+          ? Colors.green.shade50
+          : status == 'accepted'
+              ? Colors.blue.shade50
+              : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            /// 🔥 العنوان
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: kDark,
               ),
+            ),
+
+            if (details.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(details, style: const TextStyle(fontSize: 16)),
+            ],
+
+            const SizedBox(height: 10),
+
+            /// الحالة + الوقت
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _statusColor(status).withOpacity(.15),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    _statusLabel(status),
+                    style: TextStyle(
+                      color: _statusColor(status),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                if (createdAt.isNotEmpty)
+                  Text(
+                    'أنشئ: $createdAt',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+
+                if (updatedAt.isNotEmpty)
+                  Text(
+                    'آخر تحديث: $updatedAt',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            /// 🔥 الأزرار
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+
+                // 👷 العامل
+                if (!isManager && status == 'pending')
+                  ElevatedButton.icon(
+                    onPressed: () => _updateStatus(doc.id, 'accepted'),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('استلام'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                    ),
+                  ),
+
+                if (!isManager && status != 'done')
+                  ElevatedButton.icon(
+                    onPressed: () => _updateStatus(doc.id, 'done'),
+                    icon: const Icon(Icons.check),
+                    label: const Text('تم'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
+                  ),
+
+                // 👨‍💼 المدير
+                if (isManager)
+                  ElevatedButton.icon(
+                    onPressed: () => _updateStatus(doc.id, 'pending'),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('إرجاع'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                    ),
+                  ),
+
+                if (isManager)
+                  ElevatedButton.icon(
+                    onPressed: () => _deleteOrder(doc.id),
+                    icon: const Icon(Icons.delete),
+                    label: const Text('حذف'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
       ),
     );
-  }
-}
+  },
+);
