@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
+import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +9,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
+String formatTime12(String time24) {
+  try {
+    final parts = time24.split(':');
+    final hour = int.parse(parts[0]);
+    final minute = int.parse(parts[1]);
 
+    final dateTime = DateTime(0, 0, 0, hour, minute);
+    return DateFormat('hh:mm a', 'ar').format(dateTime);
+  } catch (e) {
+    return time24;
+  }
+}
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -898,7 +909,19 @@ class _AddOrderPageState extends State<AddOrderPage> {
   String orderType = 'قالب كيك';
   String period = 'صباحًا';
   Uint8List? pickedImageBytes;
+String formatTime12(String time24) {
+  try {
+    final parts = time24.split(':');
+    final hour = int.parse(parts[0]);
+    final minute = int.parse(parts[1]);
 
+    final dateTime = DateTime(0, 0, 0, hour, minute);
+
+    return DateFormat('hh:mm a', 'ar').format(dateTime);
+  } catch (e) {
+    return time24;
+  }
+}
   bool get isEditMode => widget.editDocId != null;
 
   @override
@@ -1602,7 +1625,7 @@ class _EmployeePageState extends State<EmployeePage> {
                 if (deliveryDate.isNotEmpty)
                   _detailsChip('التاريخ', deliveryDate),
                 if (deliveryTime.isNotEmpty)
-                  _detailsChip('الوقت', deliveryTime),
+                 _detailsChip('الوقت', formatTime12(deliveryTime)),
               ],
             ),
             const SizedBox(height: 14),
