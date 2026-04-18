@@ -619,154 +619,157 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
   );
 }
 
-  Widget _orderCard(QueryDocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+ Widget _orderCard(QueryDocumentSnapshot doc) {
+  final data = doc.data() as Map<String, dynamic>;
 
-    final customerName = data['customerName']?.toString() ?? '';
-    final phone = data['phone']?.toString() ?? '';
-    final orderType = data['orderType']?.toString() ?? '';
-    final deliveryDay = data['deliveryDay']?.toString() ?? '';
-    final deliveryDate = data['deliveryDate']?.toString() ?? '';
-    final deliveryTime = data['deliveryTime']?.toString() ?? '';
-    final status = data['status']?.toString() ?? 'pending';
+  final customerName = data['customerName']?.toString() ?? '';
+  final phone = data['phone']?.toString() ?? '';
+  final orderType = data['orderType']?.toString() ?? '';
+  final deliveryDay = data['deliveryDay']?.toString() ?? '';
+  final deliveryDate = data['deliveryDate']?.toString() ?? '';
+  final deliveryTime = data['deliveryTime']?.toString() ?? '';
+  final status = data['status']?.toString() ?? 'pending';
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.07),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (customerName.isNotEmpty)
-              Text(
-                customerName,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: kDark,
-                ),
-              ),
-            const SizedBox(height: 4),
-            if (phone.isNotEmpty)
-              Text(
-                phone,
-                style: const TextStyle(fontSize: 18, color: kDark),
-              ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                if (orderType.isNotEmpty) _smallChip('النوع', orderType),
-                if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay),
-                if (deliveryDate.isNotEmpty)
-                  _smallChip('التاريخ', deliveryDate),
-                if (deliveryTime.isNotEmpty)
-                  _smallChip('الوقت', deliveryTime),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: _statusColor(status).withOpacity(.13),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                _statusLabel(status),
-                style: TextStyle(
-                  color: _statusColor(status),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-children: [
-  OutlinedButton.icon(
-    onPressed: () {
+  return InkWell(
+    borderRadius: BorderRadius.circular(24),
+    onTap: () {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => AddOrderPage(
-            editDocId: doc.id,
-            existingData: data,
+          builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
+        ),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.07),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
-        ),
-      );
-    },
-    icon: const Icon(Icons.edit_outlined),
-    label: const Text('تعديل'),
-  ),
-  IconButton(
-    onPressed: () => _archiveOrder(doc.id),
-    icon: const Icon(Icons.archive_outlined),
-    tooltip: 'أرشفة',
-  ),
-  IconButton(
-    onPressed: () async {
-      final ok = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('حذف الطلب'),
-          content: const Text('هل أنت متأكد من حذف الطلب؟'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('إلغاء'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (customerName.isNotEmpty)
+            Text(
+              customerName,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: kDark,
               ),
-              child: const Text('حذف'),
             ),
-          ],
-        ),
-      );
+          const SizedBox(height: 4),
+          if (phone.isNotEmpty)
+            Text(
+              phone,
+              style: const TextStyle(fontSize: 18, color: kDark),
+            ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              if (orderType.isNotEmpty) _smallChip('النوع', orderType),
+              if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay),
+              if (deliveryDate.isNotEmpty) _smallChip('التاريخ', deliveryDate),
+              if (deliveryTime.isNotEmpty) _smallChip('الوقت', deliveryTime),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: _statusColor(status).withOpacity(.13),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              _statusLabel(status),
+              style: TextStyle(
+                color: _statusColor(status),
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddOrderPage(
+                        editDocId: doc.id,
+                        existingData: data,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('تعديل'),
+              ),
+              IconButton(
+                onPressed: () => _archiveOrder(doc.id),
+                icon: const Icon(Icons.archive_outlined),
+                tooltip: 'أرشفة',
+              ),
+              IconButton(
+                onPressed: () async {
+                  final ok = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: const Text('حذف الطلب'),
+                      content: const Text('هل أنت متأكد من حذف الطلب؟'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('إلغاء'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('حذف'),
+                        ),
+                      ],
+                    ),
+                  );
 
-      if (ok != true) return;
+                  if (ok != true) return;
 
-      await FirebaseFirestore.instance
-          .collection('orders')
-          .doc(doc.id)
-          .delete();
+                  await FirebaseFirestore.instance
+                      .collection('orders')
+                      .doc(doc.id)
+                      .delete();
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف الطلب')),
-      );
-    },
-    icon: const Icon(Icons.delete_outline, color: Colors.red),
-    tooltip: 'حذف',
-  ),
-],
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم حذف الطلب')),
+                  );
+                },
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                tooltip: 'حذف',
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _smallChip(String title, String value) {
     return Container(
