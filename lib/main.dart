@@ -1783,7 +1783,8 @@ class OrderDetailsPage extends StatelessWidget {
       ),
     ),
   ),
-                if (bytes != null) const SizedBox(height: 18),
+if (bytes != null) const SizedBox(height: 18),
+
                 _detailRow('اسم الزبون', data['customerName']?.toString() ?? ''),
                 _detailRow('رقم الهاتف', data['phone']?.toString() ?? ''),
                 _detailRow('اسم من كتب الوصل', data['writer']?.toString() ?? ''),
@@ -1802,6 +1803,32 @@ class OrderDetailsPage extends StatelessWidget {
                 _detailRow('الحالة', data['status']?.toString() ?? ''),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FullImagePage extends StatelessWidget {
+  final Uint8List imageBytes;
+
+  const FullImagePage({super.key, required this.imageBytes});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: const Text('الصورة'),
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          child: Image.memory(
+            imageBytes,
+            fit: BoxFit.contain,
           ),
         ),
       ),
