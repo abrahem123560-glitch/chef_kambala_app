@@ -842,7 +842,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
             children: [
               Padding(
                 padding: const EdgeInsets.all(14),
-                child: _buildTopSection(Docs),
+                child: _buildTopSection(docs),
               ),
               Expanded(
                 child: docs.isEmpty
@@ -1399,23 +1399,25 @@ class EmployeePage extends StatefulWidget {
 
 class _EmployeePageState extends State<EmployeePage> {
   String selectedFilter = 'كل الطلبات';
-DateTime _parseDeliveryDateTime(String date, String time) {
-  try {
-    final dateParts = date.split('-');
-    final timeParts = time.split(':');
 
-    final year = dateParts.length > 0 ? int.parse(dateParts[0]) : 9999;
-    final month = dateParts.length > 1 ? int.parse(dateParts[1]) : 12;
-    final day = dateParts.length > 2 ? int.parse(dateParts[2]) : 31;
+  DateTime parseDeliveryDateTime(String date, String time) {
+    try {
+      final dateParts = date.split('-');
+      final timeParts = time.split(':');
 
-    final hour = timeParts.length > 0 ? int.parse(timeParts[0]) : 23;
-    final minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 59;
+      final year = dateParts.isNotEmpty ? int.parse(dateParts[0]) : 9999;
+      final month = dateParts.length > 1 ? int.parse(dateParts[1]) : 12;
+      final day = dateParts.length > 2 ? int.parse(dateParts[2]) : 31;
 
-    return DateTime(year, month, day, hour, minute);
-  } catch (_) {
-    return DateTime(9999, 12, 31, 23, 59);
+      final hour = timeParts.isNotEmpty ? int.parse(timeParts[0]) : 23;
+      final minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 59;
+
+      return DateTime(year, month, day, hour, minute);
+    } catch (_) {
+      return DateTime(9999, 12, 31, 23, 59);
+    }
   }
-}
+
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('isLoggedIn');
@@ -1491,6 +1493,13 @@ DateTime _parseDeliveryDateTime(String date, String time) {
   }
 
   List<QueryDocumentSnapshot> _applyFilter(List<QueryDocumentSnapshot> docs) {
+    if (selectedFilter == 'المؤرشفة') {
+      return docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return data['archived'] == true;
+      }).toList();
+    }
+
     final activeDocs = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       return data['archived'] != true;
@@ -1607,60 +1616,69 @@ DateTime _parseDeliveryDateTime(String date, String time) {
               ),
             ),
             const SizedBox(height: 16),
-Wrap(
-  spacing: 10,
-  runSpacing: 10,
-  children: [
-    // المرحلة 1: استلام الطلب
-    if (status == 'pending')
-      ElevatedButton.icon(
-        onPressed: () => _updateStatus(doc.id, 'accepted'),
-        icon: const Icon(Icons.play_arrow),
-        label: const Text('استلام الطلب'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                if (status == 'pending')
+                  ElevatedButton.icon(
+                    onPressed: () => _updateStatus(doc.id, 'accepted'),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('استلام الطلب'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                if (status == 'accepted')
+                  ElevatedButton.icon(
+                    onPressed: () => _updateStatus(doc.id, 'done'),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('تم الإنجاز'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                if (status == 'done')
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final ok = await _confirmDialog(
+                        'تأكيد الاستلام',
+                        'هل تم استلام الطلب من قبل الزبون؟',
+                      );
+                      if (!ok) return;
+
+                      await FirebaseFirestore.instance
+                          .collection('orders')
+                          .doc(doc.id)
+                          .update({
+                        'status': 'delivered',
+                        'archived': true,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
+
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('تم الاستلام وأُرشف الطلب'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.archive),
+                    label: const Text('تم الاستلام من الزبون'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
-
-    // المرحلة 2: تم الإنجاز
-    if (status == 'accepted')
-      ElevatedButton.icon(
-        onPressed: () => _updateStatus(doc.id, 'done'),
-        icon: const Icon(Icons.check_circle_outline),
-        label: const Text('تم الإنجاز'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-        ),
-      ),
-
-    // المرحلة 3: تم الاستلام من الزبون + أرشفة
-    if (status == 'done')
-      ElevatedButton.icon(
-        onPressed: () async {
-          await FirebaseFirestore.instance
-              .collection('orders')
-              .doc(doc.id)
-              .update({
-            'status': 'delivered',
-            'archived': true,
-          });
-
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم الاستلام وأُرشف الطلب')),
-          );
-        },
-        icon: const Icon(Icons.archive),
-        label: const Text('تم الاستلام من الزبون'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.teal,
-          foregroundColor: Colors.white,
-        ),
-      ),
-  ],
-),
+    );
+  }
 
   Widget _detailsChip(String title, String value) {
     return Container(
@@ -1705,25 +1723,25 @@ Wrap(
             );
           }
 
-   final allDocs = snapshot.data!.docs;
-final filteredDocs = _applyFilter(allDocs);
+          final allDocs = snapshot.data!.docs;
+          final filteredDocs = _applyFilter(allDocs);
 
-final docs = [...filteredDocs];
-docs.sort((a, b) {
-  final dataA = a.data() as Map<String, dynamic>;
-  final dataB = b.data() as Map<String, dynamic>;
+          final docs = [...filteredDocs];
+          docs.sort((a, b) {
+            final dataA = a.data() as Map<String, dynamic>;
+            final dataB = b.data() as Map<String, dynamic>;
 
-  final dateA = dataA['deliveryDate']?.toString() ?? '';
-  final dateB = dataB['deliveryDate']?.toString() ?? '';
+            final dateA = dataA['deliveryDate']?.toString() ?? '';
+            final dateB = dataB['deliveryDate']?.toString() ?? '';
 
-  final timeA = dataA['deliveryTime']?.toString() ?? '';
-  final timeB = dataB['deliveryTime']?.toString() ?? '';
+            final timeA = dataA['deliveryTime']?.toString() ?? '';
+            final timeB = dataB['deliveryTime']?.toString() ?? '';
 
-  final dateTimeA = _parseDeliveryDateTime(dateA, timeA);
-  final dateTimeB = _parseDeliveryDateTime(dateB, timeB);
+            final dateTimeA = parseDeliveryDateTime(dateA, timeA);
+            final dateTimeB = parseDeliveryDateTime(dateB, timeB);
 
-  return dateTimeA.compareTo(dateTimeB);
-});
+            return dateTimeA.compareTo(dateTimeB);
+          });
 
           return Column(
             children: [
