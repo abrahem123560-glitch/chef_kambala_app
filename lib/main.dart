@@ -895,7 +895,7 @@ class _AddOrderPageState extends State<AddOrderPage> {
   final deliveryDateController = TextEditingController();
   final deliveryTimeController = TextEditingController();
 
-  String orderType = 'كيكة';
+  String orderType = 'قالب كيك';
   String period = 'صباحًا';
   Uint8List? pickedImageBytes;
 
@@ -1109,7 +1109,7 @@ class _AddOrderPageState extends State<AddOrderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isCake = orderType == 'كيكة';
+    final isCake = orderType == 'قالب كيك';
 
     return Scaffold(
       backgroundColor: kSoft,
@@ -1166,22 +1166,29 @@ class _AddOrderPageState extends State<AddOrderPage> {
                       ),
                     ),
                     _sectionTitle('بيانات الطلب'),
-                    DropdownButtonFormField<String>(
-                      value: orderType,
-                      decoration: const InputDecoration(
-                        labelText: 'نوع الطلب',
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'كيكة', child: Text('كيكة')),
-                        DropdownMenuItem(value: 'حلويات', child: Text('حلويات')),
-                        DropdownMenuItem(value: 'معجنات', child: Text('معجنات')),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setState(() {
-                          orderType = value;
-                        });
-                      },
+                  DropdownButtonFormField<String>(
+  value: orderType,
+  decoration: const InputDecoration(
+    labelText: 'نوع الطلب',
+  ),
+  items: const [
+    DropdownMenuItem(value: 'قالب كيك', child: Text('قالب كيك')),
+    DropdownMenuItem(value: 'قطع كيك', child: Text('قطع كيك')),
+    DropdownMenuItem(value: 'آخر', child: Text('آخر')),
+  ],
+  onChanged: (value) {
+    if (value == null) return;
+    setState(() {
+      orderType = value;
+
+      if (orderType == 'قالب كيك') {
+        quantityController.clear();
+      } else {
+        sizeController.clear();
+      }
+    });
+  },
+),
                     ),
                     const SizedBox(height: 12),
                     if (isCake)
