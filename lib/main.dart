@@ -472,142 +472,146 @@ class _ManagerPageState extends State<ManagerPage> {
     return activeDocs;
   }
 
-  Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
-    final doneCount = _countDone(docs);
-    final notDoneCount = _countNotDone(docs);
+Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
+  final doneCount = _countDone(docs);
+  final notDoneCount = _countNotDone(docs);
 
-    return Column(
-      children: [
-        Image.asset(
-          'assets/logo.png',
-          height: 110,
-          fit: BoxFit.contain,
+  return Column(
+    children: [
+      Image.asset(
+        'assets/logo.png',
+        height: 70,
+        fit: BoxFit.contain,
+      ),
+      const SizedBox(height: 4),
+      const Text(
+        'Chef Kambala',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: kDark,
         ),
-        const SizedBox(height: 8),
-        const Text(
-          'Chef Kambala',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: kDark,
-          ),
-        ),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(.07),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
+      ),
+      const SizedBox(height: 10),
+      Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'لم يكتمل',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'لم يكتمل',
-                      style: TextStyle(
-                        color: Colors.orange,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$notDoneCount',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: kDark,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$notDoneCount',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        color: kDark,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(.07),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'جاهز',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$doneCount',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        color: kDark,
-                      ),
-                    ),
-                  ],
-                ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
+              child: Column(
+                children: [
+                  const Text(
+                    'جاهز',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$doneCount',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: kDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 10),
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.05),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(.07),
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: DropdownButtonFormField<String>(
-            value: selectedFilter,
-            items: kFilterOptions
-                .map(
-                  (day) => DropdownMenuItem(
-                    value: day,
-                    child: Text(day),
+        child: DropdownButtonFormField<String>(
+          value: selectedFilter,
+          items: kFilterOptions
+              .map(
+                (day) => DropdownMenuItem(
+                  value: day,
+                  child: Text(
+                    day,
+                    style: const TextStyle(fontSize: 14),
                   ),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                selectedFilter = value;
-              });
-            },
-            decoration: const InputDecoration(
-              labelText: 'فلترة الطلبات',
-            ),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() {
+              selectedFilter = value;
+            });
+          },
+          decoration: const InputDecoration(
+            labelText: 'فلترة الطلبات',
+            isDense: true,
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Widget _orderCard(QueryDocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -631,11 +635,11 @@ class _ManagerPageState extends State<ManagerPage> {
         );
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(.07),
@@ -651,18 +655,18 @@ class _ManagerPageState extends State<ManagerPage> {
               Text(
                 customerName,
                 style: const TextStyle(
-                  fontSize: 28,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: kDark,
                 ),
               ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             if (phone.isNotEmpty)
               Text(
                 phone,
                 style: const TextStyle(fontSize: 18, color: kDark),
               ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 10,
               runSpacing: 10,
@@ -735,7 +739,7 @@ class _ManagerPageState extends State<ManagerPage> {
       child: Text(
         '$title: $value',
         style: const TextStyle(
-          fontSize: 15,
+          fontSize: 12,
           color: kDark,
           fontWeight: FontWeight.w600,
         ),
@@ -1759,16 +1763,26 @@ class OrderDetailsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (bytes != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(22),
-                    child: Image.memory(
-                      bytes,
-                      width: double.infinity,
-                      height: 240,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+         if (bytes != null)
+  GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FullImagePage(imageBytes: bytes!),
+        ),
+      );
+    },
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: Image.memory(
+        bytes,
+        width: double.infinity,
+        height: 240,
+        fit: BoxFit.cover,
+      ),
+    ),
+  ),
                 if (bytes != null) const SizedBox(height: 18),
                 _detailRow('اسم الزبون', data['customerName']?.toString() ?? ''),
                 _detailRow('رقم الهاتف', data['phone']?.toString() ?? ''),
