@@ -753,16 +753,27 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
       backgroundColor: kSoft,
       appBar: AppBar(
         title: const Text('صفحة المدير'),
-        actions: [
-          IconButton(
-            onPressed: _goToAddOrder,
-            icon: const Icon(Icons.add_box_outlined),
-          ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
+ actions: [
+  IconButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ArchivedOrdersPage(),
+        ),
+      );
+    },
+    icon: const Icon(Icons.archive_outlined),
+  ),
+  IconButton(
+    onPressed: _goToAddOrder,
+    icon: const Icon(Icons.add_box_outlined),
+  ),
+  IconButton(
+    onPressed: _logout,
+    icon: const Icon(Icons.logout),
+  ),
+],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _goToAddOrder,
@@ -1831,6 +1842,196 @@ class FullImagePage extends StatelessWidget {
             fit: BoxFit.contain,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class ArchivedOrdersPage extends StatelessWidget {
+  const ArchivedOrdersPage({super.key});
+
+  Widget _smallChip(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: kSoft,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        '$title: $value',
+        style: const TextStyle(
+          fontSize: 15,
+          color: kDark,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'accepted':
+        return 'قيد التنفيذ';
+      case 'done':
+        return 'جاهز';
+      case 'delivered':
+        return 'تم التسليم';
+      default:
+        return 'لم يكتمل';
+    }
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'accepted':
+        return Colors.blue;
+      case 'done':
+        return Colors.green;
+      case 'delivered':
+        return Colors.teal;
+      default:
+        return Colors.orange;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: kSoft,
+      appBar: AppBar(
+        title: const Text('الطلبات المؤرشفة'),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('orders')
+            .orderBy('updatedAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(color: kPrimary),
+            );
+          }
+
+          final docs = snapshot.data!.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data['archived'] == true;
+          }).toList();
+
+          if (docs.isEmpty) {
+            return const Center(
+              child: Text(
+                'لا توجد طلبات مؤرشفة',
+                style: TextStyle(fontSize: 20, color: kDark),
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(14),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final doc = docs[index];
+              final data = doc.data() as Map<String, dynamic>;
+
+              final customerName = data['customerName']?.toString() ?? '';
+              final phone = data['phone']?.toString() ?? '';
+              final orderType = data['orderType']?.toString() ?? '';
+              final deliveryDay = data['deliveryDay']?.toString() ?? '';
+              final deliveryDate = data['deliveryDate']?.toString() ?? '';
+              final deliveryTime = data['deliveryTime']?.toString() ?? '';
+              final status = data['status']?.toString() ?? 'pending';
+
+              return InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(.07),
+                        blurRadius: 12,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (customerName.isNotEmpty)
+                        Text(
+                          customerName,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: kDark,
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      if (phone.isNotEmpty)
+                        Text(
+                          phone,
+                          style: const TextStyle(fontSize: 16, color: kDark),
+                        ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          if (orderType.isNotEmpty) _smallChip('النوع', orderType),
+                          if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay),
+                          if (deliveryDate.isNotEmpty) _smallChip('التاريخ', deliveryDate),
+                          if (deliveryTime.isNotEmpty) _smallChip('الوقت', deliveryTime),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: _statusColor(status).withOpacity(.13),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          _statusLabel(status),
+                          style: TextStyle(
+                            color: _statusColor(status),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          await FirebaseFirestore.instance
+                              .collection('orders')
+                              .doc(doc.id)
+                              .update({
+                            'archived': false,
+                            'updatedAt': FieldValue.serverTimestamp(),
+                          });
+                        },
+                        icon: const Icon(Icons.unarchive_outlined),
+                        label: const Text('إلغاء الأرشفة'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
