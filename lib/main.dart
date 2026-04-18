@@ -1109,7 +1109,7 @@ class _AddOrderPageState extends State<AddOrderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isCake = orderType == 'قالب كيك';
+   final isCake = orderType == 'قالب كيك';
 
     return Scaffold(
       backgroundColor: kSoft,
@@ -1188,7 +1188,7 @@ class _AddOrderPageState extends State<AddOrderPage> {
       }
     });
   },
-),
+
                     ),
                     const SizedBox(height: 12),
                     if (isCake)
