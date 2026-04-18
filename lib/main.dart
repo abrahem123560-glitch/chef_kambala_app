@@ -550,94 +550,113 @@ class _ManagerPageState extends State<ManagerPage> {
     );
   }
 
-  Widget _orderCard(QueryDocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+Widget _orderCard(QueryDocumentSnapshot doc) {
+  final data = doc.data() as Map<String, dynamic>;
 
-    final customerName = data['customerName']?.toString() ?? '';
-    final phone = data['phone']?.toString() ?? '';
-    final orderType = data['orderType']?.toString() ?? '';
-    final deliveryDay = data['deliveryDay']?.toString() ?? '';
-    final deliveryDate = data['deliveryDate']?.toString() ?? '';
-    final deliveryTime = data['deliveryTime']?.toString() ?? '';
-    final status = data['status']?.toString() ?? 'pending';
+  final customerName = data['customerName']?.toString() ?? '';
+  final phone = data['phone']?.toString() ?? '';
+  final orderType = data['orderType']?.toString() ?? '';
+  final deliveryDay = data['deliveryDay']?.toString() ?? '';
+  final deliveryDate = data['deliveryDate']?.toString() ?? '';
+  final deliveryTime = data['deliveryTime']?.toString() ?? '';
+  final status = data['status']?.toString() ?? 'pending';
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
+  return InkWell(
+    borderRadius: BorderRadius.circular(24),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
+        ),
+      );
+    },
+    child: Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.07),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.07),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (customerName.isNotEmpty)
-              Text(
-                customerName,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: kDark,
-                ),
-              ),
-            const SizedBox(height: 8),
-            if (phone.isNotEmpty)
-              Text(
-                phone,
-                style: const TextStyle(fontSize: 18, color: kDark),
-              ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                if (orderType.isNotEmpty) _smallChip('النوع', orderType),
-                if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay),
-                if (deliveryDate.isNotEmpty)
-                  _smallChip('التاريخ', deliveryDate),
-                if (deliveryTime.isNotEmpty)
-                  _smallChip('الوقت', deliveryTime),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: _statusColor(status).withOpacity(.13),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                _statusLabel(status),
-                style: TextStyle(
-                  color: _statusColor(status),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
-    );
-  }
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (customerName.isNotEmpty)
+            Text(
+              customerName,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: kDark,
+              ),
+            ),
+          const SizedBox(height: 8),
+          if (phone.isNotEmpty)
+            Text(
+              phone,
+              style: const TextStyle(fontSize: 18, color: kDark),
+            ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              if (orderType.isNotEmpty) _smallChip('النوع', orderType),
+              if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay),
+              if (deliveryDate.isNotEmpty) _smallChip('التاريخ', deliveryDate),
+              if (deliveryTime.isNotEmpty) _smallChip('الوقت', deliveryTime),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: _statusColor(status).withOpacity(.13),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              _statusLabel(status),
+              style: TextStyle(
+                color: _statusColor(status),
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AddOrderPage(
+                          editDocId: doc.id,
+                          existingData: data,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('تعديل'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   Widget _smallChip(String title, String value) {
     return Container(
@@ -725,7 +744,14 @@ class _ManagerPageState extends State<ManagerPage> {
   }
 }
 class AddOrderPage extends StatefulWidget {
-  const AddOrderPage({super.key});
+  final String? editDocId;
+  final Map<String, dynamic>? existingData;
+
+  const AddOrderPage({
+    super.key,
+    this.editDocId,
+    this.existingData,
+  });
 
   @override
   State<AddOrderPage> createState() => _AddOrderPageState();
@@ -747,6 +773,36 @@ class _AddOrderPageState extends State<AddOrderPage> {
   String orderType = 'كيكة';
   String period = 'صباحًا';
   Uint8List? pickedImageBytes;
+
+  // 🔥 هذا الجزء الجديد (لا تحذفه)
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.existingData != null) {
+      final data = widget.existingData!;
+
+      customerNameController.text = data['customerName'] ?? '';
+      phoneController.text = data['phone'] ?? '';
+      writerController.text = data['writer'] ?? '';
+      sizeController.text = data['size'] ?? '';
+      quantityController.text =
+          data['quantity']?.toString() ?? '';
+      totalController.text =
+          data['total']?.toString() ?? '';
+      paidController.text =
+          data['paid']?.toString() ?? '';
+      detailsController.text = data['details'] ?? '';
+
+      orderDateController.text = data['orderDate'] ?? '';
+      deliveryDateController.text = data['deliveryDate'] ?? '';
+      deliveryTimeController.text = data['deliveryTime'] ?? '';
+
+      orderType = data['orderType'] ?? 'كيكة';
+      period = data['period'] ?? 'صباحًا';
+    }
+  }
+  // 🔥 نهاية الجزء الجديد
 
   String get remainingAmount {
     final total = double.tryParse(totalController.text.trim()) ?? 0;
@@ -771,16 +827,44 @@ class _AddOrderPageState extends State<AddOrderPage> {
       return '';
     }
   }
+}
 
-  Future<void> _pickImage() async {
+Future<void> _pickImage() async {
+  try {
     final picker = ImagePicker();
-    final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 40,
+      maxWidth: 1280,
+      maxHeight: 1280,
+    );
+
     if (file == null) return;
+
     final bytes = await file.readAsBytes();
+
+    if (bytes.lengthInBytes > 700 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الصورة كبيرة جدًا، اختر صورة أصغر'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       pickedImageBytes = bytes;
     });
+  } catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('حدث خطأ أثناء اختيار الصورة'),
+      ),
+    );
   }
+}
 
   Future<void> _pickDate(TextEditingController controller) async {
     final now = DateTime.now();
@@ -818,15 +902,54 @@ class _AddOrderPageState extends State<AddOrderPage> {
     });
   }
 
-  Future<void> _saveOrder() async {
-    final customerName = customerNameController.text.trim();
+ Future<void> _saveOrder() async {
+  final customerName = customerNameController.text.trim();
 
-    if (customerName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('اكتب اسم الزبون أولاً')),
-      );
-      return;
-    }
+  if (customerName.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('اكتب اسم الزبون أولاً')),
+    );
+    return;
+  }
+
+  final payload = {
+    'customerName': customerNameController.text.trim(),
+    'phone': phoneController.text.trim(),
+    'writer': writerController.text.trim(),
+    'orderType': orderType,
+    'size': sizeController.text.trim(),
+    'quantity': quantityController.text.trim(),
+    'total': totalController.text.trim(),
+    'paid': paidController.text.trim(),
+    'remaining': remainingAmount,
+    'details': detailsController.text.trim(),
+    'orderDate': orderDateController.text.trim(),
+    'deliveryDate': deliveryDateController.text.trim(),
+    'deliveryDay': deliveryDay,
+    'deliveryTime': deliveryTimeController.text.trim(),
+    'period': period,
+    'status': widget.existingData?['status']?.toString() ?? 'pending',
+    'imageBase64':
+        pickedImageBytes == null ? '' : base64Encode(pickedImageBytes!),
+    'updatedAt': FieldValue.serverTimestamp(),
+  };
+
+  if (isEditMode) {
+    await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(widget.editDocId)
+        .update(payload);
+  } else {
+    await FirebaseFirestore.instance.collection('orders').add({
+      ...payload,
+      'createdAt': FieldValue.serverTimestamp(),
+      'createdByRole': 'manager',
+    });
+  }
+
+  if (!mounted) return;
+  Navigator.pop(context);
+}
 
     await FirebaseFirestore.instance.collection('orders').add({
       'customerName': customerNameController.text.trim(),
@@ -896,7 +1019,7 @@ class _AddOrderPageState extends State<AddOrderPage> {
     return Scaffold(
       backgroundColor: kSoft,
       appBar: AppBar(
-        title: const Text('إضافة طلب جديد'),
+      title: Text(isEditMode ? 'تعديل الطلب' : 'إضافة طلب جديد'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
