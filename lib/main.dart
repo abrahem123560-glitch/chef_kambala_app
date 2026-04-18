@@ -49,6 +49,7 @@ const List<String> kFilterOptions = [
   'الخميس',
   'الجمعة',
   'السبت',
+  'المؤرشفة', // 👈 ضيف هذا
 ];
 
 class ChefKambalaApp extends StatefulWidget {
@@ -437,7 +438,12 @@ class _ManagerPageState extends State<ManagerPage> {
       final data = doc.data() as Map<String, dynamic>;
       return data['archived'] != true;
     }).toList();
-
+if (selectedFilter == 'المؤرشفة') {
+  return docs.where((doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return data['archived'] == true;
+  }).toList();
+}
     if (selectedFilter == 'كل الطلبات') return activeDocs;
 
     if (selectedFilter == 'اليوم') {
@@ -700,34 +706,67 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
             Wrap(
               spacing: 10,
               runSpacing: 10,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddOrderPage(
-                          editDocId: doc.id,
-                          existingData: data,
-                        ),
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('تعديل'),
-                ),
-                IconButton(
-                  onPressed: () => _archiveOrder(doc.id),
-                  icon: const Icon(Icons.archive_outlined),
-                  tooltip: 'أرشفة',
-                ),
-              ],
+children: [
+  OutlinedButton.icon(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AddOrderPage(
+            editDocId: doc.id,
+            existingData: data,
+          ),
+        ),
+      );
+    },
+    icon: const Icon(Icons.edit_outlined),
+    label: const Text('تعديل'),
+  ),
+  IconButton(
+    onPressed: () => _archiveOrder(doc.id),
+    icon: const Icon(Icons.archive_outlined),
+    tooltip: 'أرشفة',
+  ),
+  IconButton(
+    onPressed: () async {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('حذف الطلب'),
+          content: const Text('هل أنت متأكد من حذف الطلب؟'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('حذف'),
             ),
           ],
         ),
-      ),
-    );
-  }
+      );
+
+      if (ok != true) return;
+
+      await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(doc.id)
+          .delete();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف الطلب')),
+      );
+    },
+    icon: const Icon(Icons.delete_outline, color: Colors.red),
+    tooltip: 'حذف',
+  ),
+],
 
   Widget _smallChip(String title, String value) {
     return Container(
@@ -800,7 +839,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
             children: [
               Padding(
                 padding: const EdgeInsets.all(14),
-                child: _buildTopSection(allDocs),
+                child: _buildTopSection(Docs),
               ),
               Expanded(
                 child: docs.isEmpty
@@ -1357,7 +1396,23 @@ class EmployeePage extends StatefulWidget {
 
 class _EmployeePageState extends State<EmployeePage> {
   String selectedFilter = 'كل الطلبات';
+DateTime _parseDeliveryDateTime(String date, String time) {
+  try {
+    final dateParts = date.split('-');
+    final timeParts = time.split(':');
 
+    final year = dateParts.length > 0 ? int.parse(dateParts[0]) : 9999;
+    final month = dateParts.length > 1 ? int.parse(dateParts[1]) : 12;
+    final day = dateParts.length > 2 ? int.parse(dateParts[2]) : 31;
+
+    final hour = timeParts.length > 0 ? int.parse(timeParts[0]) : 23;
+    final minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 59;
+
+    return DateTime(year, month, day, hour, minute);
+  } catch (_) {
+    return DateTime(9999, 12, 31, 23, 59);
+  }
+}
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('isLoggedIn');
@@ -1549,47 +1604,60 @@ class _EmployeePageState extends State<EmployeePage> {
               ),
             ),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                if (status == 'pending')
-                  ElevatedButton.icon(
-                    onPressed: () => _updateStatus(doc.id, 'accepted'),
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('استلام الطلب'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                if (status == 'accepted')
-                  ElevatedButton.icon(
-                    onPressed: () => _updateStatus(doc.id, 'done'),
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: const Text('تم الإنجاز'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                if (status == 'done')
-                  ElevatedButton.icon(
-                    onPressed: () => _updateStatus(doc.id, 'accepted'),
-                    icon: const Icon(Icons.undo),
-                    label: const Text('تراجع'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-              ],
-            ),
-          ],
+Wrap(
+  spacing: 10,
+  runSpacing: 10,
+  children: [
+    // المرحلة 1: استلام الطلب
+    if (status == 'pending')
+      ElevatedButton.icon(
+        onPressed: () => _updateStatus(doc.id, 'accepted'),
+        icon: const Icon(Icons.play_arrow),
+        label: const Text('استلام الطلب'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
         ),
       ),
-    );
-  }
+
+    // المرحلة 2: تم الإنجاز
+    if (status == 'accepted')
+      ElevatedButton.icon(
+        onPressed: () => _updateStatus(doc.id, 'done'),
+        icon: const Icon(Icons.check_circle_outline),
+        label: const Text('تم الإنجاز'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+        ),
+      ),
+
+    // المرحلة 3: تم الاستلام من الزبون + أرشفة
+    if (status == 'done')
+      ElevatedButton.icon(
+        onPressed: () async {
+          await FirebaseFirestore.instance
+              .collection('orders')
+              .doc(doc.id)
+              .update({
+            'status': 'delivered',
+            'archived': true,
+          });
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم الاستلام وأُرشف الطلب')),
+          );
+        },
+        icon: const Icon(Icons.archive),
+        label: const Text('تم الاستلام من الزبون'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.teal,
+          foregroundColor: Colors.white,
+        ),
+      ),
+  ],
+),
 
   Widget _detailsChip(String title, String value) {
     return Container(
@@ -1634,8 +1702,25 @@ class _EmployeePageState extends State<EmployeePage> {
             );
           }
 
-          final allDocs = snapshot.data!.docs;
-          final docs = _applyFilter(allDocs);
+   final allDocs = snapshot.data!.docs;
+final filteredDocs = _applyFilter(allDocs);
+
+final docs = [...filteredDocs];
+docs.sort((a, b) {
+  final dataA = a.data() as Map<String, dynamic>;
+  final dataB = b.data() as Map<String, dynamic>;
+
+  final dateA = dataA['deliveryDate']?.toString() ?? '';
+  final dateB = dataB['deliveryDate']?.toString() ?? '';
+
+  final timeA = dataA['deliveryTime']?.toString() ?? '';
+  final timeB = dataB['deliveryTime']?.toString() ?? '';
+
+  final dateTimeA = _parseDeliveryDateTime(dateA, timeA);
+  final dateTimeB = _parseDeliveryDateTime(dateB, timeB);
+
+  return dateTimeA.compareTo(dateTimeB);
+});
 
           return Column(
             children: [
