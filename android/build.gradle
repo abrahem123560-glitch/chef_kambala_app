@@ -34,24 +34,24 @@ tasks.register("clean", Delete) {
 }
 
 subprojects {
-    // 1. حل مشكلة الـ namespace للمكتبات القديمة
+    // 1. حل مشكلة الـ namespace للمكتبات
     project.plugins.withId('com.android.library') {
         project.android {
             if (namespace == null) {
                 namespace project.group
             }
-            // إجبار مكتبات Java على استخدام الإصدار 17 ليتوافق مع تطبيقك
+            // إجبار Java على استخدام 1.8 ليتوافق مع جميع المكاتب
             compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
+                sourceCompatibility = JavaVersion.VERSION_1_8
+                targetCompatibility = JavaVersion.VERSION_1_8
             }
         }
     }
 
-    // 2. إجبار Kotlin على استخدام الإصدار 17 بدلاً من 1.8 ليتوافق مع تطبيقك
+    // 2. إجبار Kotlin على استخدام 1.8 ليتطابق مع Java تماماً
     project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
-            jvmTarget = "17"
+            jvmTarget = "1.8"
         }
     }
 }
