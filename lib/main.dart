@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'firebase_options.dart';
 
@@ -49,7 +51,7 @@ const List<String> kFilterOptions = [
   'الخميس',
   'الجمعة',
   'السبت',
-  'المؤرشفة', // 👈 ضيف هذا
+  'المؤرشفة',
 ];
 
 class ChefKambalaApp extends StatefulWidget {
@@ -482,32 +484,31 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
   final doneCount = _countDone(docs);
   final notDoneCount = _countNotDone(docs);
   
-  // تعديل: تم تصغير الواجهة لتظهر الطلبات بشكل أكبر
   return Column(
     children: [
       Image.asset(
         'assets/logo.png',
-        height: 40, // تم التصغير من 70
+        height: 40,
         fit: BoxFit.contain,
       ),
       const SizedBox(height: 2),
       const Text(
         'Chef Kambala',
         style: TextStyle(
-          fontSize: 16, // تم التصغير من 20
+          fontSize: 16,
           fontWeight: FontWeight.bold,
           color: kDark,
         ),
       ),
-      const SizedBox(height: 6), // تم التصغير من 10
+      const SizedBox(height: 6),
       Row(
         children: [
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(6), // تم التصغير من 10
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12), // تم التصغير من 16
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(.05),
@@ -522,7 +523,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
                     'لم يكتمل',
                     style: TextStyle(
                       color: Colors.orange,
-                      fontSize: 12, // تم التصغير من 14
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -530,7 +531,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
                   Text(
                     '$notDoneCount',
                     style: const TextStyle(
-                      fontSize: 16, // تم التصغير من 20
+                      fontSize: 16,
                       color: kDark,
                     ),
                   ),
@@ -541,10 +542,10 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
           const SizedBox(width: 8),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(6), // تم التصغير من 10
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12), // تم التصغير من 16
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(.05),
@@ -559,7 +560,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
                     'جاهز',
                     style: TextStyle(
                       color: Colors.green,
-                      fontSize: 12, // تم التصغير من 14
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -567,7 +568,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
                   Text(
                     '$doneCount',
                     style: const TextStyle(
-                      fontSize: 16, // تم التصغير من 20
+                      fontSize: 16,
                       color: kDark,
                     ),
                   ),
@@ -579,10 +580,10 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
       ),
       const SizedBox(height: 6),
       Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2), // تصغير الـ padding
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12), // تصغير من 16
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(.05),
@@ -599,7 +600,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
                   value: day,
                   child: Text(
                     day,
-                    style: const TextStyle(fontSize: 13), // تصغير
+                    style: const TextStyle(fontSize: 13),
                   ),
                 ),
               )
@@ -613,7 +614,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
           decoration: const InputDecoration(
             labelText: 'فلترة الطلبات',
             isDense: true,
-            border: InputBorder.none, // تصغير الحجم بإزالة الحدود الافتراضية للدروب داون هنا
+            border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
           ),
@@ -845,7 +846,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8), // تم التصغير
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 child: _buildTopSection(docs),
               ),
               Expanded(
@@ -902,7 +903,6 @@ class _AddOrderPageState extends State<AddOrderPage> {
   String orderType = 'قالب كيك';
   String period = 'صباحًا';
   
-  // تعديل: دعم صورتين بدلاً من واحدة
   Uint8List? pickedImageBytes1;
   Uint8List? pickedImageBytes2;
 
@@ -940,10 +940,9 @@ String formatTime12(String time24) {
     deliveryDateController.text = data['deliveryDate']?.toString() ?? '';
     deliveryTimeController.text = data['deliveryTime']?.toString() ?? '';
 
-    orderType = data['orderType']?.toString() ?? 'قالب كيك'; // تصحيح لتطابق القيم
+    orderType = data['orderType']?.toString() ?? 'قالب كيك';
     period = data['period']?.toString() ?? 'صباحًا';
 
-    // تعديل: تحميل الصور (يدعم النظام القديم للصورة الواحدة والنظام الجديد للصورتين)
     final imageBase64_1 = data['imageBase64_1']?.toString() ?? data['imageBase64']?.toString() ?? '';
     final imageBase64_2 = data['imageBase64_2']?.toString() ?? '';
 
@@ -979,7 +978,6 @@ String formatTime12(String time24) {
     }
   }
 
-  // تعديل: تحديد أي صورة يتم رفعها (1 أو 2)
   Future<void> _pickImage(int imageNumber) async {
     try {
       final picker = ImagePicker();
@@ -1056,7 +1054,6 @@ String formatTime12(String time24) {
   Future<void> _saveOrder() async {
     final isCake = orderType == 'قالب كيك';
 
-    // تعديل: إجبارية جميع الحقول مع نافذة تنبيه
     if (customerNameController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty ||
         writerController.text.trim().isEmpty ||
@@ -1110,7 +1107,6 @@ String formatTime12(String time24) {
       'deliveryDay': deliveryDay,
       'deliveryTime': deliveryTimeController.text.trim(),
       'period': period,
-      // تعديل: حفظ صورتين
       'imageBase64_1': pickedImageBytes1 == null ? '' : base64Encode(pickedImageBytes1!),
       'imageBase64_2': pickedImageBytes2 == null ? '' : base64Encode(pickedImageBytes2!),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -1168,7 +1164,6 @@ String formatTime12(String time24) {
     );
   }
 
-  // دالة مساعدة لعرض صندوق الصورة المختار
   Widget _imagePickerBox(int index, Uint8List? imageBytes) {
     return Column(
       children: [
@@ -1433,7 +1428,6 @@ String formatTime12(String time24) {
                       },
                     ),
                     _sectionTitle('صور الطلب'),
-                    // تعديل: عرض واختيار صورتين
                     Row(
                       children: [
                         Expanded(child: _imagePickerBox(1, pickedImageBytes1)),
@@ -1573,7 +1567,6 @@ class _EmployeePageState extends State<EmployeePage> {
     }
   }
 
-  // تعديل: إضافة دالتين لحساب الطلبات في صفحة العمال
   int _countDone(List<QueryDocumentSnapshot> docs) {
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
@@ -1637,7 +1630,6 @@ class _EmployeePageState extends State<EmployeePage> {
     return activeDocs;
   }
 
-  // تعديل: قسم الإحصائيات (لم يكتمل / جاهز) للعمال ليكون صغيراً
   Widget _buildWorkerTopSection(List<QueryDocumentSnapshot> docs) {
     final doneCount = _countDone(docs);
     final notDoneCount = _countNotDone(docs);
@@ -1659,7 +1651,7 @@ class _EmployeePageState extends State<EmployeePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    const Icon(Icons.pending_actions, size: 16, color: Colors.orange), // أيقونة صغيرة جداً
+                    const Icon(Icons.pending_actions, size: 16, color: Colors.orange),
                     Column(
                       children: [
                         const Text('لم يكتمل', style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -1684,7 +1676,7 @@ class _EmployeePageState extends State<EmployeePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    const Icon(Icons.done_all, size: 16, color: Colors.green), // أيقونة صغيرة جداً
+                    const Icon(Icons.done_all, size: 16, color: Colors.green),
                     Column(
                       children: [
                         const Text('جاهز', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -1730,7 +1722,6 @@ class _EmployeePageState extends State<EmployeePage> {
     final deliveryTime = data['deliveryTime']?.toString() ?? '';
     final status = data['status']?.toString() ?? 'pending';
 
-    // تعديل: تصغير الكارت والأيقونات والخطوط لعمال
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () {
@@ -1757,7 +1748,7 @@ class _EmployeePageState extends State<EmployeePage> {
             if (customerName.isNotEmpty)
               Text(
                 customerName,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kDark), // تصغير الخط
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kDark),
               ),
             const SizedBox(height: 6),
             Wrap(
@@ -1782,7 +1773,7 @@ class _EmployeePageState extends State<EmployeePage> {
                   ),
                   child: Text(
                     _statusLabel(status),
-                    style: TextStyle(color: _statusColor(status), fontWeight: FontWeight.bold, fontSize: 13), // تصغير الخط
+                    style: TextStyle(color: _statusColor(status), fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
                 Wrap(
@@ -1852,7 +1843,7 @@ class _EmployeePageState extends State<EmployeePage> {
       decoration: BoxDecoration(color: kSoft, borderRadius: BorderRadius.circular(8)),
       child: Text(
         '$title: $value',
-        style: const TextStyle(fontSize: 11, color: kDark, fontWeight: FontWeight.w600), // تصغير الخط
+        style: const TextStyle(fontSize: 11, color: kDark, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -1901,7 +1892,6 @@ class _EmployeePageState extends State<EmployeePage> {
           });
           return Column(
             children: [
-              // تعديل: إدراج القائمة الجديدة للعمال
               Padding(
                 padding: const EdgeInsets.all(10),
                 child: _buildWorkerTopSection(allDocs),
@@ -1974,7 +1964,6 @@ class OrderDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // تعديل: جلب الصورتين وعرضهما في التفاصيل (مع الحفاظ على التوافقية مع النظام القديم)
     final imageBase64_1 = data['imageBase64_1']?.toString() ?? data['imageBase64']?.toString() ?? '';
     final imageBase64_2 = data['imageBase64_2']?.toString() ?? '';
 
@@ -2006,7 +1995,6 @@ class OrderDetailsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // تعديل: عرض صورتين إن وجدتا
                 if (bytes1 != null || bytes2 != null)
                   Row(
                     children: [
@@ -2068,7 +2056,38 @@ class FullImagePage extends StatelessWidget {
   final Uint8List imageBytes;
 
   const FullImagePage({super.key, required this.imageBytes});
-@override
+
+  Future<void> _downloadImage(BuildContext context) async {
+    try {
+      final status = await Permission.storage.request();
+      if (status.isGranted || await Permission.photos.request().isGranted) {
+        final result = await ImageGallerySaver.saveImage(
+          imageBytes,
+          quality: 100,
+          name: "Order_Image_${DateTime.now().millisecondsSinceEpoch}",
+        );
+        if (result['isSuccess'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم حفظ الصورة في الاستوديو بنجاح!'), backgroundColor: Colors.green),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('حدث خطأ أثناء الحفظ'), backgroundColor: Colors.red),
+          );
+        }
+      } else {
+         ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('لم يتم منح صلاحية الوصول للاستوديو'), backgroundColor: Colors.orange),
+          );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء الحفظ'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -2076,6 +2095,13 @@ class FullImagePage extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         title: const Text('الصورة'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () => _downloadImage(context),
+            tooltip: 'حفظ الصورة في الجهاز',
+          ),
+        ],
       ),
       body: Center(
         child: InteractiveViewer(
@@ -2086,7 +2112,7 @@ class FullImagePage extends StatelessWidget {
         ),
       ),
     );
-}
+  }
 }
 
 class ArchivedOrdersPage extends StatelessWidget {
@@ -2108,32 +2134,32 @@ class ArchivedOrdersPage extends StatelessWidget {
         ),
       ),
     );
-}
+  }
 
   String _statusLabel(String status) {
     switch (status) {
       case 'accepted':
         return 'قيد التنفيذ';
-case 'done':
+      case 'done':
         return 'جاهز';
-case 'delivered':
+      case 'delivered':
         return 'تم التسليم';
-default:
+      default:
         return 'لم يكتمل';
-}
+    }
   }
 
   Color _statusColor(String status) {
     switch (status) {
       case 'accepted':
         return Colors.blue;
-case 'done':
+      case 'done':
         return Colors.green;
-case 'delivered':
+      case 'delivered':
         return Colors.teal;
-default:
+      default:
         return Colors.orange;
-}
+    }
   }
 
   @override
@@ -2167,7 +2193,7 @@ default:
                 style: TextStyle(fontSize: 20, color: kDark),
               ),
             );
-}
+          }
 
           return ListView.builder(
             padding: const EdgeInsets.all(14),
@@ -2193,7 +2219,7 @@ default:
                       builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
                     ),
                   );
-},
+                },
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
@@ -2263,7 +2289,7 @@ default:
                             'archived': false,
                             'updatedAt': FieldValue.serverTimestamp(),
                           });
-},
+                        },
                         icon: const Icon(Icons.unarchive_outlined),
                         label: const Text('إلغاء الأرشفة'),
                       ),
@@ -2271,9 +2297,9 @@ default:
                   ),
                 ),
               );
-},
+            },
           );
-},
+        },
       ),
     );
   }
