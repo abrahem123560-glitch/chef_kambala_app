@@ -40,18 +40,18 @@ subprojects {
             if (namespace == null) {
                 namespace project.group
             }
-            // إجبار Java على استخدام 1.8 ليتوافق مع جميع المكاتب
-            compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_1_8
-                targetCompatibility = JavaVersion.VERSION_1_8
-            }
         }
     }
 
-    // 2. إجبار Kotlin على استخدام 1.8 ليتطابق مع Java تماماً
+    // 2. الحل النهائي لتعارض إصدارات Java و Kotlin
     project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-        kotlinOptions {
-            jvmTarget = "1.8"
+        // إذا كان الملف يخص تطبيقك الأساسي، استخدم 17
+        if (project.name == 'app') {
+            kotlinOptions.jvmTarget = "17"
+        } 
+        // إذا كان الملف يخص أي مكتبة خارجية، استخدم 1.8
+        else {
+            kotlinOptions.jvmTarget = "1.8"
         }
     }
 }
