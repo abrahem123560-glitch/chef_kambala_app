@@ -489,14 +489,14 @@ class _ManagerPageState extends State<ManagerPage> {
       children: [
         Image.asset(
           'assets/logo.png',
-          height: 40,
+          height: 30,
           fit: BoxFit.contain,
         ),
         const SizedBox(height: 2),
         const Text(
           'Chef Kambala',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: kDark,
           ),
@@ -506,136 +506,96 @@ class _ManagerPageState extends State<ManagerPage> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 3, offset: const Offset(0, 1)),
                   ],
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      'لم يكتمل',
-                      style: TextStyle(
-                        color: Colors.orange,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$notDoneCount',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: kDark,
-                      ),
-                    ),
+                    const Text('لم يكتمل', style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('$notDoneCount', style: const TextStyle(fontSize: 14, color: kDark, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 3, offset: const Offset(0, 1)),
                   ],
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      'جاهز',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$doneCount',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: kDark,
-                      ),
-                    ),
+                    const Text('جاهز', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('$doneCount', style: const TextStyle(fontSize: 14, color: kDark, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Row(
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 3, offset: const Offset(0, 1)),
                   ],
                 ),
                 child: DropdownButtonFormField<String>(
                   isExpanded: true,
                   value: selectedFilter,
+                  iconSize: 18,
                   items: kFilterOptions
-                      .map((day) => DropdownMenuItem(value: day, child: Text(day, style: const TextStyle(fontSize: 12))))
+                      .map((day) => DropdownMenuItem(value: day, child: Text(day, style: const TextStyle(fontSize: 11))))
                       .toList(),
                   onChanged: (value) {
                     if (value == null) return;
                     setState(() => selectedFilter = value);
                   },
-                  decoration: const InputDecoration(labelText: 'حسب اليوم', isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                  decoration: const InputDecoration(contentPadding: EdgeInsets.zero, isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                height: 36,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 3, offset: const Offset(0, 1)),
                   ],
                 ),
                 child: DropdownButtonFormField<String>(
                   isExpanded: true,
                   value: selectedBranchFilter,
+                  iconSize: 18,
                   items: kBranchFilterOptions
-                      .map((branch) => DropdownMenuItem(value: branch, child: Text(branch, style: const TextStyle(fontSize: 12))))
+                      .map((branch) => DropdownMenuItem(value: branch, child: Text(branch, style: const TextStyle(fontSize: 11))))
                       .toList(),
                   onChanged: (value) {
                     if (value == null) return;
                     setState(() => selectedBranchFilter = value);
                   },
-                  decoration: const InputDecoration(labelText: 'حسب الفرع', isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                  decoration: const InputDecoration(contentPadding: EdgeInsets.zero, isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                 ),
               ),
             ),
@@ -654,12 +614,10 @@ class _ManagerPageState extends State<ManagerPage> {
     final deliveryDay = data['deliveryDay']?.toString() ?? '';
     final deliveryDate = data['deliveryDate']?.toString() ?? '';
     
-    // --- حل مشكلة الوقت ---
     final rawTime = data['deliveryTime']?.toString() ?? '';
     final period = data['period']?.toString() ?? '';
     final cleanTime = rawTime.replaceAll(RegExp(r'[^0-9:]'), '').trim();
     final deliveryTime = cleanTime.isNotEmpty ? '\u200E$cleanTime $period' : '';
-    // ----------------------
 
     final status = data['status']?.toString() ?? 'pending';
     final branch = data['branch']?.toString() ?? 'استلام فرع الدور';
@@ -908,29 +866,29 @@ class _ManagerPageState extends State<ManagerPage> {
           final allDocs = snapshot.data!.docs;
           final docs = _applyFilter(allDocs);
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                child: _buildTopSection(docs),
-              ),
-              Expanded(
-                child: docs.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'لا توجد طلبات مطابقة للفلتر',
-                          style: TextStyle(fontSize: 20, color: kDark),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        itemCount: docs.length,
-                        itemBuilder: (context, index) {
-                          return _orderCard(docs[index]);
-                        },
-                      ),
-              ),
-            ],
+          return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 20),
+            itemCount: docs.isEmpty ? 2 : docs.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  child: _buildTopSection(docs),
+                );
+              }
+              if (docs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 60),
+                  child: Center(
+                    child: Text(
+                      'لا توجد طلبات مطابقة للفلتر',
+                      style: TextStyle(fontSize: 20, color: kDark),
+                    ),
+                  ),
+                );
+              }
+              return _orderCard(docs[index - 1]);
+            },
           );
         },
       ),
@@ -1563,7 +1521,7 @@ class EmployeePage extends StatefulWidget {
 
 class _EmployeePageState extends State<EmployeePage> {
   String selectedFilter = 'كل الطلبات';
-  String selectedBranchFilter = 'كل الفروع'; // التعديل: فلتر الفروع للعمال
+  String selectedBranchFilter = 'كل الفروع'; 
 
   DateTime parseDeliveryDateTime(String date, String time) {
     try {
@@ -1716,12 +1674,12 @@ class _EmployeePageState extends State<EmployeePage> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 4, offset: const Offset(0, 2)),
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 3, offset: const Offset(0, 1)),
                   ],
                 ),
                 child: Row(
@@ -1730,7 +1688,7 @@ class _EmployeePageState extends State<EmployeePage> {
                     const Icon(Icons.pending_actions, size: 16, color: Colors.orange),
                     Column(
                       children: [
-                        const Text('لم يكتمل', style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
+                        const Text('لم يكتمل', style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold)),
                         Text('$notDoneCount', style: const TextStyle(fontSize: 14, color: kDark, fontWeight: FontWeight.bold)),
                       ],
                     ),
@@ -1738,15 +1696,15 @@ class _EmployeePageState extends State<EmployeePage> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 4, offset: const Offset(0, 2)),
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 3, offset: const Offset(0, 1)),
                   ],
                 ),
                 child: Row(
@@ -1755,7 +1713,7 @@ class _EmployeePageState extends State<EmployeePage> {
                     const Icon(Icons.done_all, size: 16, color: Colors.green),
                     Column(
                       children: [
-                        const Text('جاهز', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                        const Text('جاهز', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
                         Text('$doneCount', style: const TextStyle(fontSize: 14, color: kDark, fontWeight: FontWeight.bold)),
                       ],
                     ),
@@ -1765,51 +1723,55 @@ class _EmployeePageState extends State<EmployeePage> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Row(
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                height: 36, 
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 4, offset: const Offset(0, 2)),
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 3, offset: const Offset(0, 1)),
                   ],
                 ),
                 child: DropdownButtonFormField<String>(
                   isExpanded: true,
                   value: selectedFilter,
-                  items: kFilterOptions.map((day) => DropdownMenuItem(value: day, child: Text(day, style: const TextStyle(fontSize: 12)))).toList(),
+                  iconSize: 18,
+                  items: kFilterOptions.map((day) => DropdownMenuItem(value: day, child: Text(day, style: const TextStyle(fontSize: 11)))).toList(),
                   onChanged: (value) {
                     if (value == null) return;
                     setState(() => selectedFilter = value);
                   },
-                  decoration: const InputDecoration(labelText: 'حسب اليوم', isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                  decoration: const InputDecoration(contentPadding: EdgeInsets.zero, isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                height: 36, 
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 4, offset: const Offset(0, 2)),
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 3, offset: const Offset(0, 1)),
                   ],
                 ),
                 child: DropdownButtonFormField<String>(
                   isExpanded: true,
                   value: selectedBranchFilter,
-                  items: kBranchFilterOptions.map((branch) => DropdownMenuItem(value: branch, child: Text(branch, style: const TextStyle(fontSize: 12)))).toList(),
+                  iconSize: 18,
+                  items: kBranchFilterOptions.map((branch) => DropdownMenuItem(value: branch, child: Text(branch, style: const TextStyle(fontSize: 11)))).toList(),
                   onChanged: (value) {
                     if (value == null) return;
                     setState(() => selectedBranchFilter = value);
                   },
-                  decoration: const InputDecoration(labelText: 'حسب الفرع', isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                  decoration: const InputDecoration(contentPadding: EdgeInsets.zero, isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                 ),
               ),
             ),
@@ -1826,7 +1788,6 @@ class _EmployeePageState extends State<EmployeePage> {
     final deliveryDay = data['deliveryDay']?.toString() ?? '';
     final deliveryDate = data['deliveryDate']?.toString() ?? '';
     
-    // --- حل مشكلة الوقت ---
     final rawTime = data['deliveryTime']?.toString() ?? '';
     final period = data['period']?.toString() ?? '';
     final cleanTime = rawTime.replaceAll(RegExp(r'[^0-9:]'), '').trim();
@@ -2005,29 +1966,30 @@ class _EmployeePageState extends State<EmployeePage> {
             return dateTimeA.compareTo(dateTimeB);
           });
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(10),
-                child: _buildWorkerTopSection(allDocs),
-              ),
-              Expanded(
-                child: docs.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'لا توجد طلبات مطابقة للفلتر',
-                          style: TextStyle(fontSize: 18, color: kDark),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        itemCount: docs.length,
-                        itemBuilder: (context, index) {
-                          return _employeeCard(docs[index]);
-                        },
-                      ),
-              ),
-            ],
+          // دمج الفلاتر بداخل اللستة حتى تختفي عند النزول (Scroll)
+          return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 20),
+            itemCount: docs.isEmpty ? 2 : docs.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: _buildWorkerTopSection(allDocs),
+                );
+              }
+              if (docs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 60),
+                  child: Center(
+                    child: Text(
+                      'لا توجد طلبات مطابقة للفلتر',
+                      style: TextStyle(fontSize: 18, color: kDark),
+                    ),
+                  ),
+                );
+              }
+              return _employeeCard(docs[index - 1]);
+            },
           );
         },
       ),
@@ -2049,7 +2011,6 @@ class OrderDetailsPage extends StatelessWidget {
     }
   }
 
-  // الدالة المصلحة بدون TextDirection حتى ما يطلع خطأ، وبترتيب يدوي من اليمين لليسار
   Widget _styledRow(String title, String value, {bool isLast = false}) {
     final displayValue = (value.isEmpty) ? "غير متوفر" : value;
     return Column(
