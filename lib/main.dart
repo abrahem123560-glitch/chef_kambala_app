@@ -60,6 +60,14 @@ const List<String> kBranches = [
   'توصيل'
 ];
 
+// التعديل: خيارات فلتر الفروع
+const List<String> kBranchFilterOptions = [
+  'كل الفروع',
+  'استلام فرع الدور',
+  'استلام فرع الدولعي',
+  'توصيل'
+];
+
 class ChefKambalaApp extends StatefulWidget {
   const ChefKambalaApp({super.key});
 
@@ -342,6 +350,7 @@ class ManagerPage extends StatefulWidget {
 
 class _ManagerPageState extends State<ManagerPage> {
   String selectedFilter = 'كل الطلبات';
+  String selectedBranchFilter = 'كل الفروع'; // التعديل: متغير لفلتر الفروع
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -441,384 +450,394 @@ class _ManagerPageState extends State<ManagerPage> {
     }).length;
   }
 
+  // التعديل: دمج فلتر الزمن مع فلتر الفروع
   List<QueryDocumentSnapshot> _applyFilter(List<QueryDocumentSnapshot> docs) {
-    final activeDocs = docs.where((doc) {
+    // 1. فلتر الأرشيف والنشط
+    List<QueryDocumentSnapshot> filtered = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      return data['archived'] != true;
+      bool isArchived = data['archived'] == true;
+      if (selectedFilter == 'المؤرشفة') return isArchived;
+      return !isArchived;
     }).toList();
-    if (selectedFilter == 'المؤرشفة') {
-      return docs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return data['archived'] == true;
-      }).toList();
-    }
-    if (selectedFilter == 'كل الطلبات') return activeDocs;
 
-    if (selectedFilter == 'اليوم') {
-      final now = DateTime.now();
-      final todayName = kWeekDays[now.weekday % 7];
-      return activeDocs.where((doc) {
+    // 2. فلتر الزمن (الأيام)
+    if (selectedFilter != 'كل الطلبات' && selectedFilter != 'المؤرشفة' && selectedFilter != 'هذا الأسبوع') {
+      String targetDay = selectedFilter;
+      if (selectedFilter == 'اليوم') {
+        targetDay = kWeekDays[DateTime.now().weekday % 7];
+      } else if (selectedFilter == 'غدًا') {
+        targetDay = kWeekDays[DateTime.now().add(const Duration(days: 1)).weekday % 7];
+      }
+      
+      filtered = filtered.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        return (data['deliveryDay']?.toString() ?? '') == todayName;
-      }).toList();
-    }
-
-    if (selectedFilter == 'غدًا') {
-      final tomorrow = DateTime.now().add(const Duration(days: 1));
-      final tomorrowName = kWeekDays[tomorrow.weekday % 7];
-      return activeDocs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return (data['deliveryDay']?.toString() ?? '') == tomorrowName;
+        return (data['deliveryDay']?.toString() ?? '') == targetDay;
       }).toList();
     }
 
-    if (selectedFilter == 'هذا الأسبوع') {
-      return activeDocs;
-    }
-
-    if (kWeekDays.contains(selectedFilter)) {
-      return activeDocs.where((doc) {
+    // 3. فلتر الفروع (التقاطع مع الزمن)
+    if (selectedBranchFilter != 'كل الفروع') {
+      filtered = filtered.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        return (data['deliveryDay']?.toString() ?? '') == selectedFilter;
+        return (data['branch']?.toString() ?? 'استلام فرع الدور') == selectedBranchFilter;
       }).toList();
     }
 
-    return activeDocs;
+    return filtered;
   }
 
-Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
-  final doneCount = _countDone(docs);
-  final notDoneCount = _countNotDone(docs);
-  
-  return Column(
-    children: [
-      Image.asset(
-        'assets/logo.png',
-        height: 40,
-        fit: BoxFit.contain,
-      ),
-      const SizedBox(height: 2),
-      const Text(
-        'Chef Kambala',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: kDark,
+  Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
+    final doneCount = _countDone(docs);
+    final notDoneCount = _countNotDone(docs);
+    
+    return Column(
+      children: [
+        Image.asset(
+          'assets/logo.png',
+          height: 40,
+          fit: BoxFit.contain,
         ),
-      ),
-      const SizedBox(height: 6),
-      Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'لم يكتمل',
-                    style: TextStyle(
-                      color: Colors.orange,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+        const SizedBox(height: 2),
+        const Text(
+          'Chef Kambala',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: kDark,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$notDoneCount',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: kDark,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'لم يكتمل',
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      '$notDoneCount',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: kDark,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'جاهز',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$doneCount',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: kDark,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'جاهز',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      '$doneCount',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: kDark,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 6),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: DropdownButtonFormField<String>(
-          value: selectedFilter,
-          items: kFilterOptions
-              .map(
-                (day) => DropdownMenuItem(
-                  value: day,
-                  child: Text(
-                    day,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value == null) return;
-            setState(() {
-              selectedFilter = value;
-            });
-          },
-          decoration: const InputDecoration(
-            labelText: 'فلترة الطلبات',
-            isDense: true,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
- Widget _orderCard(QueryDocumentSnapshot doc) {
-  final data = doc.data() as Map<String, dynamic>;
-
-  final customerName = data['customerName']?.toString() ?? '';
-  final phone = data['phone']?.toString() ?? '';
-  final orderType = data['orderType']?.toString() ?? '';
-  final deliveryDay = data['deliveryDay']?.toString() ?? '';
-  final deliveryDate = data['deliveryDate']?.toString() ?? '';
-  final deliveryTime = data['deliveryTime']?.toString() ?? '';
-  final status = data['status']?.toString() ?? 'pending';
-  final branch = data['branch']?.toString() ?? 'استلام فرع الدور';
-
-  // التعديل: اللون الأخضر الطوخ والكتابة البيضاء للطلبات الجاهزة والمستلمة
-  final isDoneOrDelivered = status == 'done' || status == 'delivered';
-  final cardColor = isDoneOrDelivered ? const Color(0xFF1B5E20) : Colors.white;
-  final textColor = isDoneOrDelivered ? Colors.white : kDark;
-  final subtitleColor = isDoneOrDelivered ? Colors.white70 : kDark;
-
-  return InkWell(
-    borderRadius: BorderRadius.circular(24),
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
-        ),
-      );
-    },
-    child: Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: isDoneOrDelivered ? Border.all(color: Colors.greenAccent, width: 2) : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.07),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // التعديل: شريط الفروع
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: branch == 'توصيل' ? Colors.redAccent : (isDoneOrDelivered ? Colors.green.shade800 : kPrimary),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Text(
-              branch,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (customerName.isNotEmpty)
-                  Text(
-                    customerName,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
+        const SizedBox(height: 8),
+        // التعديل: صف يحتوي على قائمتين منسدلتين للفلتر
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                const SizedBox(height: 4),
-                if (phone.isNotEmpty)
-                  Text(
-                    phone,
-                    style: TextStyle(fontSize: 18, color: textColor),
-                  ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    if (orderType.isNotEmpty) _smallChip('النوع', orderType, isDoneOrDelivered),
-                    if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay, isDoneOrDelivered),
-                    if (deliveryDate.isNotEmpty) _smallChip('التاريخ', deliveryDate, isDoneOrDelivered),
-                    if (deliveryTime.isNotEmpty) _smallChip('الوقت', deliveryTime, isDoneOrDelivered),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isDoneOrDelivered ? Colors.white24 : _statusColor(status).withOpacity(.13),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    _statusLabel(status),
-                    style: TextStyle(
-                      color: isDoneOrDelivered ? Colors.white : _statusColor(status),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedFilter,
+                  items: kFilterOptions
+                      .map((day) => DropdownMenuItem(value: day, child: Text(day, style: const TextStyle(fontSize: 12))))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => selectedFilter = value);
+                  },
+                  decoration: const InputDecoration(labelText: 'حسب اليوم', isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
                 ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AddOrderPage(
-                              editDocId: doc.id,
-                              existingData: data,
-                            ),
-                          ),
-                        );
-                      },
-                      icon: Icon(Icons.edit_outlined, color: textColor),
-                      label: Text('تعديل', style: TextStyle(color: textColor)),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: subtitleColor),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedBranchFilter,
+                  items: kBranchFilterOptions
+                      .map((branch) => DropdownMenuItem(value: branch, child: Text(branch, style: const TextStyle(fontSize: 12))))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => selectedBranchFilter = value);
+                  },
+                  decoration: const InputDecoration(labelText: 'حسب الفرع', isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _orderCard(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+
+    final customerName = data['customerName']?.toString() ?? '';
+    final phone = data['phone']?.toString() ?? '';
+    final orderType = data['orderType']?.toString() ?? '';
+    final deliveryDay = data['deliveryDay']?.toString() ?? '';
+    final deliveryDate = data['deliveryDate']?.toString() ?? '';
+    final deliveryTime = data['deliveryTime']?.toString() ?? '';
+    final status = data['status']?.toString() ?? 'pending';
+    final branch = data['branch']?.toString() ?? 'استلام فرع الدور';
+
+    final isDoneOrDelivered = status == 'done' || status == 'delivered';
+    final cardColor = isDoneOrDelivered ? const Color(0xFF1B5E20) : Colors.white;
+    final textColor = isDoneOrDelivered ? Colors.white : kDark;
+    final subtitleColor = isDoneOrDelivered ? Colors.white70 : kDark;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: isDoneOrDelivered ? Border.all(color: Colors.greenAccent, width: 2) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.07),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: branch == 'توصيل' ? Colors.redAccent : (isDoneOrDelivered ? Colors.green.shade800 : kPrimary),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: Text(
+                branch,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (customerName.isNotEmpty)
+                    Text(
+                      customerName,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => _archiveOrder(doc.id),
-                      icon: Icon(Icons.archive_outlined, color: textColor),
-                      tooltip: 'أرشفة',
+                  const SizedBox(height: 4),
+                  if (phone.isNotEmpty)
+                    Text(
+                      phone,
+                      style: TextStyle(fontSize: 18, color: textColor),
                     ),
-                    IconButton(
-                      onPressed: () async {
-                        final ok = await showDialog<bool>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('حذف الطلب'),
-                            content: const Text('هل أنت متأكد من حذف الطلب؟'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('إلغاء'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      if (orderType.isNotEmpty) _smallChip('النوع', orderType, isDoneOrDelivered),
+                      if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay, isDoneOrDelivered),
+                      if (deliveryDate.isNotEmpty) _smallChip('التاريخ', deliveryDate, isDoneOrDelivered),
+                      if (deliveryTime.isNotEmpty) _smallChip('الوقت', deliveryTime, isDoneOrDelivered),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDoneOrDelivered ? Colors.white24 : _statusColor(status).withOpacity(.13),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      _statusLabel(status),
+                      style: TextStyle(
+                        color: isDoneOrDelivered ? Colors.white : _statusColor(status),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AddOrderPage(
+                                editDocId: doc.id,
+                                existingData: data,
                               ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
+                            ),
+                          );
+                        },
+                        icon: Icon(Icons.edit_outlined, color: textColor),
+                        label: Text('تعديل', style: TextStyle(color: textColor)),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: subtitleColor),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _archiveOrder(doc.id),
+                        icon: Icon(Icons.archive_outlined, color: textColor),
+                        tooltip: 'أرشفة',
+                      ),
+                      IconButton(
+                        onPressed: () async {
+                          final ok = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text('حذف الطلب'),
+                              content: const Text('هل أنت متأكد من حذف الطلب؟'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('إلغاء'),
                                 ),
-                                child: const Text('حذف'),
-                              ),
-                            ],
-                          ),
-                        );
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('حذف'),
+                                ),
+                              ],
+                            ),
+                          );
 
-                        if (ok != true) return;
+                          if (ok != true) return;
 
-                        await FirebaseFirestore.instance
-                            .collection('orders')
-                            .doc(doc.id)
-                            .delete();
+                          await FirebaseFirestore.instance
+                              .collection('orders')
+                              .doc(doc.id)
+                              .delete();
 
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تم حذف الطلب')),
-                        );
-                      },
-                      icon: Icon(Icons.delete_outline, color: isDoneOrDelivered ? Colors.redAccent : Colors.red),
-                      tooltip: 'حذف',
-                    ),
-                  ],
-                ),
-              ],
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('تم حذف الطلب')),
+                          );
+                        },
+                        icon: Icon(Icons.delete_outline, color: isDoneOrDelivered ? Colors.redAccent : Colors.red),
+                        tooltip: 'حذف',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _smallChip(String title, String value, bool isDoneOrDelivered) {
     return Container(
@@ -845,27 +864,27 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
       backgroundColor: kSoft,
       appBar: AppBar(
         title: const Text('صفحة المدير'),
- actions: [
-  IconButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const ArchivedOrdersPage(), // تأكد ان هذي الصفحة موجودة بالجزء الثاني
-        ),
-      );
-    },
-    icon: const Icon(Icons.archive_outlined),
-  ),
-  IconButton(
-    onPressed: _goToAddOrder,
-    icon: const Icon(Icons.add_box_outlined),
-  ),
-  IconButton(
-    onPressed: _logout,
-    icon: const Icon(Icons.logout),
-  ),
-],
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ArchivedOrdersPage(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.archive_outlined),
+          ),
+          IconButton(
+            onPressed: _goToAddOrder,
+            icon: const Icon(Icons.add_box_outlined),
+          ),
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _goToAddOrder,
@@ -898,7 +917,7 @@ Widget _buildTopSection(List<QueryDocumentSnapshot> docs) {
                 child: docs.isEmpty
                     ? const Center(
                         child: Text(
-                          'لا توجد طلبات في هذا التصنيف',
+                          'لا توجد طلبات مطابقة للفلتر',
                           style: TextStyle(fontSize: 20, color: kDark),
                         ),
                       )
@@ -947,24 +966,25 @@ class _AddOrderPageState extends State<AddOrderPage> {
 
   String orderType = 'قالب كيك';
   String period = 'صباحًا';
-  String branch = 'استلام فرع الدور'; // التعديل: متغير الفرع
+  String branch = 'استلام فرع الدور'; 
   
   Uint8List? pickedImageBytes1;
   Uint8List? pickedImageBytes2;
 
-String formatTime12(String time24) {
-  try {
-    final parts = time24.split(':');
-    final hour = int.parse(parts[0]);
-    final minute = int.parse(parts[1]);
+  String formatTime12(String time24) {
+    try {
+      final parts = time24.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
 
-    final dateTime = DateTime(0, 0, 0, hour, minute);
+      final dateTime = DateTime(0, 0, 0, hour, minute);
 
-    return DateFormat('hh:mm a', 'ar').format(dateTime);
-  } catch (e) {
-    return time24;
+      return DateFormat('hh:mm a', 'ar').format(dateTime);
+    } catch (e) {
+      return time24;
+    }
   }
-}
+
   bool get isEditMode => widget.editDocId != null;
 
   @override
@@ -988,7 +1008,7 @@ String formatTime12(String time24) {
 
     orderType = data['orderType']?.toString() ?? 'قالب كيك';
     period = data['period']?.toString() ?? 'صباحًا';
-    branch = data['branch']?.toString() ?? 'استلام فرع الدور'; // قراءة الفرع
+    branch = data['branch']?.toString() ?? 'استلام فرع الدور'; 
 
     final imageBase64_1 = data['imageBase64_1']?.toString() ?? data['imageBase64']?.toString() ?? '';
     final imageBase64_2 = data['imageBase64_2']?.toString() ?? '';
@@ -1082,7 +1102,6 @@ String formatTime12(String time24) {
     });
   }
 
-  // التعديل: نظام الوقت 12 ساعة مباشر بدون لف ودوران
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
@@ -1106,7 +1125,6 @@ String formatTime12(String time24) {
   }
 
   Future<void> _saveOrder() async {
-    // التعديل: إظهار الحقول حسب النوع الجديد
     bool showSize = orderType == 'قالب كيك' || orderType == 'قالب كيك وقطع كيك';
     bool showQuantity = orderType == 'قطع كيك' || orderType == 'قالب كيك وقطع كيك';
 
@@ -1153,7 +1171,7 @@ String formatTime12(String time24) {
       'phone': phoneController.text.trim(),
       'writer': writerController.text.trim(),
       'orderType': orderType,
-      'branch': branch, // التعديل: حفظ الفرع بقاعدة البيانات
+      'branch': branch, 
       'size': showSize ? sizeController.text.trim() : '',
       'quantity': showQuantity ? quantityController.text.trim() : '',
       'total': totalController.text.trim(),
@@ -1299,7 +1317,6 @@ String formatTime12(String time24) {
                 ),
                 child: Column(
                   children: [
-                    // التعديل: اختيار الفرع هنا
                     DropdownButtonFormField<String>(
                       value: branch,
                       items: kBranches
@@ -1335,28 +1352,27 @@ String formatTime12(String time24) {
                     ),
                     _sectionTitle('بيانات الطلب'),
                   DropdownButtonFormField<String>(
-  value: orderType,
-  decoration: const InputDecoration(
-    labelText: 'نوع الطلب',
-  ),
-  items: const [
-    DropdownMenuItem(value: 'قالب كيك', child: Text('قالب كيك')),
-    DropdownMenuItem(value: 'قطع كيك', child: Text('قطع كيك')),
-    DropdownMenuItem(value: 'قالب كيك وقطع كيك', child: Text('قالب كيك وقطع كيك')), // التعديل: النوع الجديد بدل آخر
-  ],
-  onChanged: (value) {
-    if (value == null) return;
-    setState(() {
-      orderType = value;
+                    value: orderType,
+                    decoration: const InputDecoration(
+                      labelText: 'نوع الطلب',
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'قالب كيك', child: Text('قالب كيك')),
+                      DropdownMenuItem(value: 'قطع كيك', child: Text('قطع كيك')),
+                      DropdownMenuItem(value: 'قالب كيك وقطع كيك', child: Text('قالب كيك وقطع كيك')), 
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        orderType = value;
 
-      if (orderType == 'قالب كيك') {
-        quantityController.clear();
-      } else if (orderType == 'قطع كيك') {
-        sizeController.clear();
-      }
-    });
-  },
-
+                        if (orderType == 'قالب كيك') {
+                          quantityController.clear();
+                        } else if (orderType == 'قطع كيك') {
+                          sizeController.clear();
+                        }
+                      });
+                    },
                     ),
                     const SizedBox(height: 12),
                     if (showSize)
@@ -1536,6 +1552,7 @@ String formatTime12(String time24) {
     );
   }
 }
+
 class EmployeePage extends StatefulWidget {
   const EmployeePage({super.key});
 
@@ -1545,6 +1562,7 @@ class EmployeePage extends StatefulWidget {
 
 class _EmployeePageState extends State<EmployeePage> {
   String selectedFilter = 'كل الطلبات';
+  String selectedBranchFilter = 'كل الفروع'; // التعديل: فلتر الفروع للعمال
 
   DateTime parseDeliveryDateTime(String date, String time) {
     try {
@@ -1655,50 +1673,40 @@ class _EmployeePageState extends State<EmployeePage> {
     }).length;
   }
 
+  // التعديل: دمج فلتر الزمن مع فلتر الفروع لصفحة العمال
   List<QueryDocumentSnapshot> _applyFilter(List<QueryDocumentSnapshot> docs) {
-    if (selectedFilter == 'المؤرشفة') {
-      return docs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return data['archived'] == true;
-      }).toList();
-    }
-
-    final activeDocs = docs.where((doc) {
+    // 1. فلتر الأرشيف والنشط
+    List<QueryDocumentSnapshot> filtered = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      return data['archived'] != true;
+      bool isArchived = data['archived'] == true;
+      if (selectedFilter == 'المؤرشفة') return isArchived;
+      return !isArchived;
     }).toList();
-    if (selectedFilter == 'كل الطلبات') return activeDocs;
 
-    if (selectedFilter == 'اليوم') {
-      final now = DateTime.now();
-      final todayName = kWeekDays[now.weekday % 7];
-      return activeDocs.where((doc) {
+    // 2. فلتر الزمن (الأيام)
+    if (selectedFilter != 'كل الطلبات' && selectedFilter != 'المؤرشفة' && selectedFilter != 'هذا الأسبوع') {
+      String targetDay = selectedFilter;
+      if (selectedFilter == 'اليوم') {
+        targetDay = kWeekDays[DateTime.now().weekday % 7];
+      } else if (selectedFilter == 'غدًا') {
+        targetDay = kWeekDays[DateTime.now().add(const Duration(days: 1)).weekday % 7];
+      }
+      
+      filtered = filtered.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        return (data['deliveryDay']?.toString() ?? '') == todayName;
+        return (data['deliveryDay']?.toString() ?? '') == targetDay;
       }).toList();
     }
 
-    if (selectedFilter == 'غدًا') {
-      final tomorrow = DateTime.now().add(const Duration(days: 1));
-      final tomorrowName = kWeekDays[tomorrow.weekday % 7];
-      return activeDocs.where((doc) {
+    // 3. فلتر الفروع (التقاطع مع الزمن)
+    if (selectedBranchFilter != 'كل الفروع') {
+      filtered = filtered.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        return (data['deliveryDay']?.toString() ?? '') == tomorrowName;
+        return (data['branch']?.toString() ?? 'استلام فرع الدور') == selectedBranchFilter;
       }).toList();
     }
 
-    if (selectedFilter == 'هذا الأسبوع') {
-      return activeDocs;
-    }
-
-    if (kWeekDays.contains(selectedFilter)) {
-      return activeDocs.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return (data['deliveryDay']?.toString() ?? '') == selectedFilter;
-      }).toList();
-    }
-
-    return activeDocs;
+    return filtered;
   }
 
   Widget _buildWorkerTopSection(List<QueryDocumentSnapshot> docs) {
@@ -1761,24 +1769,55 @@ class _EmployeePageState extends State<EmployeePage> {
           ],
         ),
         const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 4, offset: const Offset(0, 2)),
-            ],
-          ),
-          child: DropdownButtonFormField<String>(
-            value: selectedFilter,
-            items: kFilterOptions.map((day) => DropdownMenuItem(value: day, child: Text(day, style: const TextStyle(fontSize: 12)))).toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() => selectedFilter = value);
-            },
-            decoration: const InputDecoration(labelText: 'تصفية', isDense: true, border: InputBorder.none),
-          ),
+        // التعديل: صف يحتوي على قائمتين منسدلتين للعمال
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 4, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedFilter,
+                  items: kFilterOptions.map((day) => DropdownMenuItem(value: day, child: Text(day, style: const TextStyle(fontSize: 12)))).toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => selectedFilter = value);
+                  },
+                  decoration: const InputDecoration(labelText: 'حسب اليوم', isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 4, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: selectedBranchFilter,
+                  items: kBranchFilterOptions.map((branch) => DropdownMenuItem(value: branch, child: Text(branch, style: const TextStyle(fontSize: 12)))).toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => selectedBranchFilter = value);
+                  },
+                  decoration: const InputDecoration(labelText: 'حسب الفرع', isDense: true, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1792,9 +1831,9 @@ class _EmployeePageState extends State<EmployeePage> {
     final deliveryDate = data['deliveryDate']?.toString() ?? '';
     final deliveryTime = data['deliveryTime']?.toString() ?? '';
     final status = data['status']?.toString() ?? 'pending';
-    final branch = data['branch']?.toString() ?? 'استلام فرع الدور'; // التعديل: الفرع
+    final branch = data['branch']?.toString() ?? 'استلام فرع الدور';
 
-    // التعديل: اللون الأخضر الطوخ يم العمال
+    // اللون الأخضر الطوخ يم العمال للطلبات المنجزة
     final isDoneOrDelivered = status == 'done' || status == 'delivered';
     final cardColor = isDoneOrDelivered ? const Color(0xFF1B5E20) : Colors.white;
     final textColor = isDoneOrDelivered ? Colors.white : kDark;
@@ -1822,7 +1861,6 @@ class _EmployeePageState extends State<EmployeePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // التعديل: شريط الفروع أعلى الطلب
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
@@ -1946,7 +1984,6 @@ class _EmployeePageState extends State<EmployeePage> {
     );
   }
 
-  // التعديل: تحديث الودجت لاستقبال حالة اللون
   Widget _detailsChip(String title, String value, bool isDoneOrDelivered) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -2018,7 +2055,7 @@ class _EmployeePageState extends State<EmployeePage> {
                 child: docs.isEmpty
                     ? const Center(
                         child: Text(
-                          'لا توجد طلبات حالياً',
+                          'لا توجد طلبات مطابقة للفلتر',
                           style: TextStyle(fontSize: 18, color: kDark),
                         ),
                       )
@@ -2038,172 +2075,167 @@ class _EmployeePageState extends State<EmployeePage> {
   }
 }
 
+// تأكد ان هذا السطر موجود فوك كلش بأول الملف، إذا مموجود ضيفه:
+// import 'dart:typed_data';
+
 class OrderDetailsPage extends StatelessWidget {
   final String docId;
   final Map<String, dynamic> data;
-  const OrderDetailsPage({
-    super.key,
-    required this.docId,
-    required this.data,
-  });
+  const OrderDetailsPage({super.key, required this.docId, required this.data});
 
-  Widget _detailRow(String title, String value) {
-    if (value.isEmpty) return const SizedBox();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: kSoft,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Text(
-          '$title: $value',
-          style: const TextStyle(
-            fontSize: 17,
-            color: kDark,
-            fontWeight: FontWeight.w600,
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'accepted': return 'قيد التنفيذ';
+      case 'done': return 'جاهز';
+      case 'delivered': return 'تم التسليم';
+      default: return 'لم يكتمل';
+    }
+  }
+
+  // الدالة الجديدة بتصميم "السطر الملون والفاصل"
+  Widget _styledRow(String title, String value, {bool isLast = false}) {
+    final displayValue = (value == null || value.toString().trim().isEmpty) ? "غير متوفر" : value.toString();
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+              Expanded(
+                child: Text(
+                  displayValue,
+                  textAlign: TextAlign.left,
+                  style: const TextStyle(color: Color(0xFF2B2118), fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
+        ),
+        if (!isLast) Divider(color: Colors.grey.shade300, thickness: 1, height: 1), // الخط الفاصل
+      ],
+    );
+  }
+
+  // بوكس لتجميع المعلومات المتشابهة
+  Widget _buildSection(String sectionTitle, List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFFD98A3A), // لون القسم (برتقالي Chef Kambala)
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
+            ),
+            child: Text(sectionTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final img1 = data['imageBase64_1']?.toString() ?? data['imageBase64']?.toString() ?? '';
+    final img2 = data['imageBase64_2']?.toString() ?? '';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6EFE8),
+      appBar: AppBar(title: const Text('تفاصيل الوصل')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // عرض الصور بشكل أنيق
+            if (img1.isNotEmpty || img2.isNotEmpty)
+              Container(
+                height: 200,
+                margin: const EdgeInsets.only(bottom: 20),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    if (img1.isNotEmpty) _imgPreview(context, img1),
+                    if (img1.isNotEmpty && img2.isNotEmpty) const SizedBox(width: 10),
+                    if (img2.isNotEmpty) _imgPreview(context, img2),
+                  ],
+                ),
+              ),
+
+            // قسم معلومات الزبون
+            _buildSection('معلومات الزبون والكاتب', [
+              _styledRow('اسم الزبون', data['customerName'] ?? ''),
+              _styledRow('رقم الهاتف', data['phone'] ?? ''),
+              _styledRow('اسم الكاتب', data['writer'] ?? ''),
+              _styledRow('الفرع / الاستلام', data['branch'] ?? '', isLast: true),
+            ]),
+
+            // قسم تفاصيل الطلب
+            _buildSection('تفاصيل الطلب', [
+              _styledRow('نوع الطلب', data['orderType'] ?? ''),
+              _styledRow('القياس', data['size'] ?? ''),
+              _styledRow('الكمية', data['quantity'] ?? ''),
+              _styledRow('التفاصيل', data['details'] ?? '', isLast: true),
+            ]),
+
+            // قسم المواعيد
+            _buildSection('المواعيد', [
+              _styledRow('يوم الاستلام', data['deliveryDay'] ?? ''),
+              _styledRow('تاريخ الاستلام', data['deliveryDate'] ?? ''),
+              _styledRow('وقت الاستلام', data['deliveryTime'] ?? ''),
+              _styledRow('الفترة', data['period'] ?? '', isLast: true),
+            ]),
+
+            // قسم الحسابات والحالة
+            _buildSection('الحسابات والحالة', [
+              _styledRow('المبلغ الكلي', "${data['total'] ?? 0} د.ع"),
+              _styledRow('المبلغ الواصل', "${data['paid'] ?? 0} د.ع"),
+              _styledRow('المبلغ الباقي', "${data['remaining'] ?? 0} د.ع"),
+              _styledRow('حالة الطلب', _statusLabel(data['status']?.toString() ?? 'pending'), isLast: true),
+            ]),
+          ],
         ),
       ),
     );
   }
 
-  Uint8List? _safeDecodeImage(String imageBase64) {
-    try {
-      if (imageBase64.isEmpty) return null;
-      final bytes = base64Decode(imageBase64);
-      if (bytes.lengthInBytes > 700 * 1024) return null;
-      return bytes;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final imageBase64_1 = data['imageBase64_1']?.toString() ?? data['imageBase64']?.toString() ?? '';
-    final imageBase64_2 = data['imageBase64_2']?.toString() ?? '';
-
-    final bytes1 = _safeDecodeImage(imageBase64_1);
-    final bytes2 = _safeDecodeImage(imageBase64_2);
-
-    return Scaffold(
-      backgroundColor: kSoft,
-      appBar: AppBar(
-        title: const Text('تفاصيل الطلب (الوصل)'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (bytes1 != null || bytes2 != null)
-                  Row(
-                    children: [
-                      if (bytes1 != null)
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => FullImagePage(imageBytes: bytes1)));
-                            },
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Image.memory(bytes1, height: 160, fit: BoxFit.cover),
-                            ),
-                          ),
-                        ),
-                      if (bytes1 != null && bytes2 != null) const SizedBox(width: 10),
-                      if (bytes2 != null)
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => FullImagePage(imageBytes: bytes2)));
-                            },
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Image.memory(bytes2, height: 160, fit: BoxFit.cover),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                if (bytes1 != null || bytes2 != null) const SizedBox(height: 18),
-
-                _detailRow('الفرع / الاستلام', data['branch']?.toString() ?? 'استلام فرع الدور'), // التعديل: الفرع في الوصل
-                _detailRow('اسم الزبون', data['customerName']?.toString() ?? ''),
-                _detailRow('رقم الهاتف', data['phone']?.toString() ?? ''),
-                _detailRow('اسم من كتب الوصل', data['writer']?.toString() ?? ''),
-                _detailRow('نوع الطلب', data['orderType']?.toString() ?? ''),
-                _detailRow('القياس', data['size']?.toString() ?? ''),
-                _detailRow('الكمية', data['quantity']?.toString() ?? ''),
-                _detailRow('المبلغ الكلي', data['total']?.toString() ?? ''),
-                _detailRow('المبلغ الواصل', data['paid']?.toString() ?? ''),
-                _detailRow('المبلغ الباقي', data['remaining']?.toString() ?? ''),
-                _detailRow('تفاصيل الطلب', data['details']?.toString() ?? ''),
-                _detailRow('تاريخ الطلب', data['orderDate']?.toString() ?? ''),
-                _detailRow('تاريخ الاستلام', data['deliveryDate']?.toString() ?? ''),
-                _detailRow('يوم الاستلام', data['deliveryDay']?.toString() ?? ''),
-                _detailRow('وقت الاستلام', data['deliveryTime']?.toString() ?? ''),
-                _detailRow('الفترة', data['period']?.toString() ?? ''),
-                _detailRow('الحالة', _statusLabel(data['status']?.toString() ?? 'pending')),
-              ],
-            ),
-          ),
-        ),
+  Widget _imgPreview(BuildContext context, String base64) {
+    final bytes = base64Decode(base64);
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FullImagePage(imageBytes: bytes))),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Image.memory(bytes, width: 250, fit: BoxFit.cover),
       ),
     );
   }
 }
 
+// كلاس عرض الصور (مصلح وكامل)
 class FullImagePage extends StatelessWidget {
   final Uint8List imageBytes;
-
   const FullImagePage({super.key, required this.imageBytes});
 
   Future<void> _downloadImage(BuildContext context) async {
     try {
-      final status = await Permission.storage.request();
-      if (status.isGranted || await Permission.photos.request().isGranted) {
-        final result = await ImageGallerySaver.saveImage(
-          imageBytes,
-          quality: 100,
-          name: "Order_Image_${DateTime.now().millisecondsSinceEpoch}",
-        );
-        if (result['isSuccess'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم حفظ الصورة في الاستوديو بنجاح!'), backgroundColor: Colors.green),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('حدث خطأ أثناء الحفظ'), backgroundColor: Colors.red),
-          );
-        }
-      } else {
-         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('لم يتم منح صلاحية الوصول للاستوديو'), backgroundColor: Colors.orange),
-          );
-      }
-    } catch (e) {
+      final result = await ImageGallerySaver.saveImage(imageBytes, quality: 100);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('حدث خطأ أثناء الحفظ'), backgroundColor: Colors.red),
+        SnackBar(content: Text(result['isSuccess'] ? 'تم حفظ الصورة!' : 'فشل الحفظ'), backgroundColor: Colors.green),
       );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('حدث خطأ أثناء الحفظ')));
     }
   }
 
@@ -2211,238 +2243,38 @@ class FullImagePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: const Text('الصورة'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: () => _downloadImage(context),
-            tooltip: 'حفظ الصورة في الجهاز',
-          ),
-        ],
-      ),
-      body: Center(
-        child: InteractiveViewer(
-          child: Image.memory(
-            imageBytes,
-            fit: BoxFit.contain,
-          ),
-        ),
-      ),
+      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white, actions: [
+        IconButton(icon: const Icon(Icons.download), onPressed: () => _downloadImage(context)),
+      ]),
+      body: Center(child: InteractiveViewer(child: Image.memory(imageBytes, fit: BoxFit.contain))),
     );
   }
 }
 
+// كلاس الأرشيف (مصلح وكامل)
 class ArchivedOrdersPage extends StatelessWidget {
   const ArchivedOrdersPage({super.key});
-
-  Widget _smallChip(String title, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: kSoft,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        '$title: $value',
-        style: const TextStyle(
-          fontSize: 15,
-          color: kDark,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'accepted':
-        return 'قيد التنفيذ';
-      case 'done':
-        return 'جاهز';
-      case 'delivered':
-        return 'تم التسليم';
-      default:
-        return 'لم يكتمل';
-    }
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'accepted':
-        return Colors.blue;
-      case 'done':
-        return Colors.green;
-      case 'delivered':
-        return Colors.teal;
-      default:
-        return Colors.orange;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kSoft,
-      appBar: AppBar(
-        title: const Text('الطلبات المؤرشفة'),
-      ),
+      backgroundColor: const Color(0xFFF6EFE8),
+      appBar: AppBar(title: const Text('الطلبات المؤرشفة')),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('orders')
-            .orderBy('updatedAt', descending: true)
-            .snapshots(),
+        stream: FirebaseFirestore.instance.collection('orders').orderBy('updatedAt', descending: true).snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(color: kPrimary),
-            );
-          }
-
-          final docs = snapshot.data!.docs.where((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return data['archived'] == true;
-          }).toList();
-
-          if (docs.isEmpty) {
-            return const Center(
-              child: Text(
-                'لا توجد طلبات مؤرشفة',
-                style: TextStyle(fontSize: 20, color: kDark),
-              ),
-            );
-          }
-
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          final docs = snapshot.data!.docs.where((doc) => (doc.data() as Map)['archived'] == true).toList();
+          if (docs.isEmpty) return const Center(child: Text('لا توجد طلبات مؤرشفة'));
           return ListView.builder(
             padding: const EdgeInsets.all(14),
             itemCount: docs.length,
             itemBuilder: (context, index) {
-              final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
-
-              final customerName = data['customerName']?.toString() ?? '';
-              final phone = data['phone']?.toString() ?? '';
-              final orderType = data['orderType']?.toString() ?? '';
-              final deliveryDay = data['deliveryDay']?.toString() ?? '';
-              final deliveryDate = data['deliveryDate']?.toString() ?? '';
-              final deliveryTime = data['deliveryTime']?.toString() ?? '';
-              final status = data['status']?.toString() ?? 'pending';
-              final branch = data['branch']?.toString() ?? 'استلام فرع الدور'; // التعديل: الفرع في الأرشيف
-
-              return InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
-                    ),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(.07),
-                        blurRadius: 12,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // التعديل: شريط الفروع في الأرشيف
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: branch == 'توصيل' ? Colors.redAccent : kPrimary,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(24),
-                            topRight: Radius.circular(24),
-                          ),
-                        ),
-                        child: Text(
-                          branch,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (customerName.isNotEmpty)
-                              Text(
-                                customerName,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: kDark,
-                                ),
-                              ),
-                            const SizedBox(height: 8),
-                            if (phone.isNotEmpty)
-                              Text(
-                                phone,
-                                style: const TextStyle(fontSize: 16, color: kDark),
-                              ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: [
-                                if (orderType.isNotEmpty) _smallChip('النوع', orderType),
-                                if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay),
-                                if (deliveryDate.isNotEmpty) _smallChip('التاريخ', deliveryDate),
-                                if (deliveryTime.isNotEmpty) _smallChip('الوقت', deliveryTime),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: _statusColor(status).withOpacity(.13),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                _statusLabel(status),
-                                style: TextStyle(
-                                  color: _statusColor(status),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            OutlinedButton.icon(
-                              onPressed: () async {
-                                await FirebaseFirestore.instance
-                                    .collection('orders')
-                                    .doc(doc.id)
-                                    .update({
-                                  'archived': false,
-                                  'updatedAt': FieldValue.serverTimestamp(),
-                                });
-                              },
-                              icon: const Icon(Icons.unarchive_outlined),
-                              label: const Text('إلغاء الأرشفة'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+              final data = docs[index].data() as Map<String, dynamic>;
+              return Card(
+                child: ListTile(
+                  title: Text(data['customerName'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(data['branch'] ?? ''),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OrderDetailsPage(docId: docs[index].id, data: data))),
                 ),
               );
             },
