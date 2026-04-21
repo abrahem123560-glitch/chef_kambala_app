@@ -60,7 +60,6 @@ const List<String> kBranches = [
   'توصيل'
 ];
 
-// التعديل: خيارات فلتر الفروع
 const List<String> kBranchFilterOptions = [
   'كل الفروع',
   'استلام فرع الدور',
@@ -350,7 +349,7 @@ class ManagerPage extends StatefulWidget {
 
 class _ManagerPageState extends State<ManagerPage> {
   String selectedFilter = 'كل الطلبات';
-  String selectedBranchFilter = 'كل الفروع'; // التعديل: متغير لفلتر الفروع
+  String selectedBranchFilter = 'كل الفروع';
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -450,9 +449,7 @@ class _ManagerPageState extends State<ManagerPage> {
     }).length;
   }
 
-  // التعديل: دمج فلتر الزمن مع فلتر الفروع
   List<QueryDocumentSnapshot> _applyFilter(List<QueryDocumentSnapshot> docs) {
-    // 1. فلتر الأرشيف والنشط
     List<QueryDocumentSnapshot> filtered = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       bool isArchived = data['archived'] == true;
@@ -460,7 +457,6 @@ class _ManagerPageState extends State<ManagerPage> {
       return !isArchived;
     }).toList();
 
-    // 2. فلتر الزمن (الأيام)
     if (selectedFilter != 'كل الطلبات' && selectedFilter != 'المؤرشفة' && selectedFilter != 'هذا الأسبوع') {
       String targetDay = selectedFilter;
       if (selectedFilter == 'اليوم') {
@@ -475,7 +471,6 @@ class _ManagerPageState extends State<ManagerPage> {
       }).toList();
     }
 
-    // 3. فلتر الفروع (التقاطع مع الزمن)
     if (selectedBranchFilter != 'كل الفروع') {
       filtered = filtered.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
@@ -585,7 +580,6 @@ class _ManagerPageState extends State<ManagerPage> {
           ],
         ),
         const SizedBox(height: 8),
-        // التعديل: صف يحتوي على قائمتين منسدلتين للفلتر
         Row(
           children: [
             Expanded(
@@ -659,7 +653,14 @@ class _ManagerPageState extends State<ManagerPage> {
     final orderType = data['orderType']?.toString() ?? '';
     final deliveryDay = data['deliveryDay']?.toString() ?? '';
     final deliveryDate = data['deliveryDate']?.toString() ?? '';
-    final deliveryTime = data['deliveryTime']?.toString() ?? '';
+    
+    // --- حل مشكلة الوقت ---
+    final rawTime = data['deliveryTime']?.toString() ?? '';
+    final period = data['period']?.toString() ?? '';
+    final cleanTime = rawTime.replaceAll(RegExp(r'[^0-9:]'), '').trim();
+    final deliveryTime = cleanTime.isNotEmpty ? '\u200E$cleanTime $period' : '';
+    // ----------------------
+
     final status = data['status']?.toString() ?? 'pending';
     final branch = data['branch']?.toString() ?? 'استلام فرع الدور';
 
@@ -1673,9 +1674,7 @@ class _EmployeePageState extends State<EmployeePage> {
     }).length;
   }
 
-  // التعديل: دمج فلتر الزمن مع فلتر الفروع لصفحة العمال
   List<QueryDocumentSnapshot> _applyFilter(List<QueryDocumentSnapshot> docs) {
-    // 1. فلتر الأرشيف والنشط
     List<QueryDocumentSnapshot> filtered = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       bool isArchived = data['archived'] == true;
@@ -1683,7 +1682,6 @@ class _EmployeePageState extends State<EmployeePage> {
       return !isArchived;
     }).toList();
 
-    // 2. فلتر الزمن (الأيام)
     if (selectedFilter != 'كل الطلبات' && selectedFilter != 'المؤرشفة' && selectedFilter != 'هذا الأسبوع') {
       String targetDay = selectedFilter;
       if (selectedFilter == 'اليوم') {
@@ -1698,7 +1696,6 @@ class _EmployeePageState extends State<EmployeePage> {
       }).toList();
     }
 
-    // 3. فلتر الفروع (التقاطع مع الزمن)
     if (selectedBranchFilter != 'كل الفروع') {
       filtered = filtered.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
@@ -1769,7 +1766,6 @@ class _EmployeePageState extends State<EmployeePage> {
           ],
         ),
         const SizedBox(height: 8),
-        // التعديل: صف يحتوي على قائمتين منسدلتين للعمال
         Row(
           children: [
             Expanded(
@@ -1829,11 +1825,16 @@ class _EmployeePageState extends State<EmployeePage> {
     final orderType = data['orderType']?.toString() ?? '';
     final deliveryDay = data['deliveryDay']?.toString() ?? '';
     final deliveryDate = data['deliveryDate']?.toString() ?? '';
-    final deliveryTime = data['deliveryTime']?.toString() ?? '';
+    
+    // --- حل مشكلة الوقت ---
+    final rawTime = data['deliveryTime']?.toString() ?? '';
+    final period = data['period']?.toString() ?? '';
+    final cleanTime = rawTime.replaceAll(RegExp(r'[^0-9:]'), '').trim();
+    final deliveryTime = cleanTime.isNotEmpty ? '\u200E$cleanTime $period' : '';
+
     final status = data['status']?.toString() ?? 'pending';
     final branch = data['branch']?.toString() ?? 'استلام فرع الدور';
 
-    // اللون الأخضر الطوخ يم العمال للطلبات المنجزة
     final isDoneOrDelivered = status == 'done' || status == 'delivered';
     final cardColor = isDoneOrDelivered ? const Color(0xFF1B5E20) : Colors.white;
     final textColor = isDoneOrDelivered ? Colors.white : kDark;
@@ -1854,9 +1855,7 @@ class _EmployeePageState extends State<EmployeePage> {
           color: cardColor,
           borderRadius: BorderRadius.circular(16),
           border: isDoneOrDelivered ? Border.all(color: Colors.greenAccent, width: 2) : null,
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 8, offset: const Offset(0, 3)),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 8, offset: const Offset(0, 3))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1865,20 +1864,9 @@ class _EmployeePageState extends State<EmployeePage> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 color: branch == 'توصيل' ? Colors.redAccent : (isDoneOrDelivered ? Colors.green.shade800 : kPrimary),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
               ),
-              child: Text(
-                branch,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              child: Text(branch, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             ),
             Padding(
               padding: const EdgeInsets.all(12),
@@ -1886,14 +1874,10 @@ class _EmployeePageState extends State<EmployeePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (customerName.isNotEmpty)
-                    Text(
-                      customerName,
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
-                    ),
+                    Text(customerName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                   const SizedBox(height: 6),
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: 6, runSpacing: 6,
                     children: [
                       if (orderType.isNotEmpty) _detailsChip('النوع', orderType, isDoneOrDelivered),
                       if (deliveryDay.isNotEmpty) _detailsChip('اليوم', deliveryDay, isDoneOrDelivered),
@@ -1911,14 +1895,7 @@ class _EmployeePageState extends State<EmployeePage> {
                           color: isDoneOrDelivered ? Colors.white24 : _statusColor(status).withOpacity(.13),
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        child: Text(
-                          _statusLabel(status),
-                          style: TextStyle(
-                            color: isDoneOrDelivered ? Colors.white : _statusColor(status), 
-                            fontWeight: FontWeight.bold, 
-                            fontSize: 13
-                          ),
-                        ),
+                        child: Text(_statusLabel(status), style: TextStyle(color: isDoneOrDelivered ? Colors.white : _statusColor(status), fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
                       Wrap(
                         spacing: 4,
@@ -1926,51 +1903,33 @@ class _EmployeePageState extends State<EmployeePage> {
                           if (status == 'pending')
                             ElevatedButton.icon(
                               onPressed: () => _updateStatus(doc.id, 'accepted'),
-                              icon: const Icon(Icons.play_arrow, size: 16),
-                              label: const Text('استلام', style: TextStyle(fontSize: 12)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                minimumSize: Size.zero,
-                              ),
+                              icon: const Icon(Icons.play_arrow, size: 16), label: const Text('استلام', style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), minimumSize: Size.zero),
                             ),
                           if (status == 'accepted')
                             ElevatedButton.icon(
                               onPressed: () => _updateStatus(doc.id, 'done'),
-                              icon: const Icon(Icons.check_circle_outline, size: 16),
-                              label: const Text('إنجاز', style: TextStyle(fontSize: 12)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                minimumSize: Size.zero,
-                              ),
+                              icon: const Icon(Icons.check_circle_outline, size: 16), label: const Text('إنجاز', style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), minimumSize: Size.zero),
                             ),
-                          if (status == 'done')
+                          if (status == 'done') ...[
+                            ElevatedButton.icon(
+                              onPressed: () => _updateStatus(doc.id, 'accepted'),
+                              icon: const Icon(Icons.undo, size: 16), label: const Text('تراجع', style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), minimumSize: Size.zero),
+                            ),
                             ElevatedButton.icon(
                               onPressed: () async {
                                 final ok = await _confirmDialog('تأكيد الاستلام', 'هل تم استلام الطلب من قبل الزبون؟');
                                 if (!ok) return;
-
-                                await FirebaseFirestore.instance.collection('orders').doc(doc.id).update({
-                                  'status': 'delivered',
-                                  'archived': true,
-                                  'updatedAt': FieldValue.serverTimestamp(),
-                                });
-
+                                await FirebaseFirestore.instance.collection('orders').doc(doc.id).update({'status': 'delivered', 'archived': true, 'updatedAt': FieldValue.serverTimestamp()});
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم الاستلام وأُرشف الطلب')));
                               },
-                              icon: const Icon(Icons.archive, size: 16),
-                              label: const Text('سُلِم للزبون', style: TextStyle(fontSize: 12)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.teal,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                minimumSize: Size.zero,
-                              ),
+                              icon: const Icon(Icons.archive, size: 16), label: const Text('سُلِم للزبون', style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), minimumSize: Size.zero),
                             ),
+                          ],
                         ],
                       ),
                     ],
@@ -2045,6 +2004,7 @@ class _EmployeePageState extends State<EmployeePage> {
 
             return dateTimeA.compareTo(dateTimeB);
           });
+
           return Column(
             children: [
               Padding(
@@ -2075,9 +2035,6 @@ class _EmployeePageState extends State<EmployeePage> {
   }
 }
 
-// تأكد ان هذا السطر موجود فوك كلش بأول الملف، إذا مموجود ضيفه:
-// import 'dart:typed_data';
-
 class OrderDetailsPage extends StatelessWidget {
   final String docId;
   final Map<String, dynamic> data;
@@ -2092,54 +2049,48 @@ class OrderDetailsPage extends StatelessWidget {
     }
   }
 
-  // الدالة الجديدة بتصميم "السطر الملون والفاصل"
+  // الدالة المصلحة بدون TextDirection حتى ما يطلع خطأ، وبترتيب يدوي من اليمين لليسار
   Widget _styledRow(String title, String value, {bool isLast = false}) {
-    final displayValue = (value == null || value.toString().trim().isEmpty) ? "غير متوفر" : value.toString();
+    final displayValue = (value.isEmpty) ? "غير متوفر" : value;
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 15, fontWeight: FontWeight.bold),
-              ),
               Expanded(
                 child: Text(
                   displayValue,
-                  textAlign: TextAlign.left,
-                  style: const TextStyle(color: Color(0xFF2B2118), fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(color: Color(0xFF2B2118), fontSize: 17, fontWeight: FontWeight.bold),
                 ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                '$title :',
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
         ),
-        if (!isLast) Divider(color: Colors.grey.shade300, thickness: 1, height: 1), // الخط الفاصل
+        if (!isLast) Divider(color: Colors.grey.shade200, thickness: 1, height: 1),
       ],
     );
   }
 
-  // بوكس لتجميع المعلومات المتشابهة
   Widget _buildSection(String sectionTitle, List<Widget> children) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFD98A3A), // لون القسم (برتقالي Chef Kambala)
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15)),
-            ),
-            child: Text(sectionTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: const BoxDecoration(color: Color(0xFFD98A3A), borderRadius: BorderRadius.only(topLeft: Radius.circular(15), topRight: Radius.circular(15))),
+            child: Text(sectionTitle, textAlign: TextAlign.right, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
           ),
           ...children,
         ],
@@ -2159,50 +2110,45 @@ class OrderDetailsPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // عرض الصور بشكل أنيق
             if (img1.isNotEmpty || img2.isNotEmpty)
               Container(
-                height: 200,
-                margin: const EdgeInsets.only(bottom: 20),
+                height: 220, margin: const EdgeInsets.only(bottom: 20),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
                     if (img1.isNotEmpty) _imgPreview(context, img1),
-                    if (img1.isNotEmpty && img2.isNotEmpty) const SizedBox(width: 10),
+                    if (img1.isNotEmpty && img2.isNotEmpty) const SizedBox(width: 12),
                     if (img2.isNotEmpty) _imgPreview(context, img2),
                   ],
                 ),
               ),
 
-            // قسم معلومات الزبون
             _buildSection('معلومات الزبون والكاتب', [
-              _styledRow('اسم الزبون', data['customerName'] ?? ''),
-              _styledRow('رقم الهاتف', data['phone'] ?? ''),
-              _styledRow('اسم الكاتب', data['writer'] ?? ''),
-              _styledRow('الفرع / الاستلام', data['branch'] ?? '', isLast: true),
+              _styledRow('اسم الزبون', data['customerName']?.toString() ?? ''),
+              _styledRow('رقم الهاتف', data['phone']?.toString() ?? ''),
+              _styledRow('اسم الكاتب', data['writer']?.toString() ?? ''),
+              _styledRow('الفرع / الاستلام', data['branch']?.toString() ?? '', isLast: true),
             ]),
 
-            // قسم تفاصيل الطلب
             _buildSection('تفاصيل الطلب', [
-              _styledRow('نوع الطلب', data['orderType'] ?? ''),
-              _styledRow('القياس', data['size'] ?? ''),
-              _styledRow('الكمية', data['quantity'] ?? ''),
-              _styledRow('التفاصيل', data['details'] ?? '', isLast: true),
+              _styledRow('نوع الطلب', data['orderType']?.toString() ?? ''),
+              _styledRow('القياس', data['size']?.toString() ?? ''),
+              _styledRow('الكمية', data['quantity']?.toString() ?? ''),
+              _styledRow('التفاصيل', data['details']?.toString() ?? '', isLast: true),
             ]),
 
-            // قسم المواعيد
             _buildSection('المواعيد', [
-              _styledRow('يوم الاستلام', data['deliveryDay'] ?? ''),
-              _styledRow('تاريخ الاستلام', data['deliveryDate'] ?? ''),
-              _styledRow('وقت الاستلام', data['deliveryTime'] ?? ''),
-              _styledRow('الفترة', data['period'] ?? '', isLast: true),
+              _styledRow('تاريخ الطلب', data['orderDate']?.toString() ?? ''),
+              _styledRow('يوم الاستلام', data['deliveryDay']?.toString() ?? ''),
+              _styledRow('تاريخ الاستلام', data['deliveryDate']?.toString() ?? ''),
+              _styledRow('وقت الاستلام', data['deliveryTime']?.toString() ?? ''),
+              _styledRow('الفترة', data['period']?.toString() ?? '', isLast: true),
             ]),
 
-            // قسم الحسابات والحالة
             _buildSection('الحسابات والحالة', [
-              _styledRow('المبلغ الكلي', "${data['total'] ?? 0} د.ع"),
-              _styledRow('المبلغ الواصل', "${data['paid'] ?? 0} د.ع"),
-              _styledRow('المبلغ الباقي', "${data['remaining'] ?? 0} د.ع"),
+              _styledRow('المبلغ الكلي', "${data['total']?.toString() ?? 0} د.ع"),
+              _styledRow('المبلغ الواصل', "${data['paid']?.toString() ?? 0} د.ع"),
+              _styledRow('المبلغ الباقي', "${data['remaining']?.toString() ?? 0} د.ع"),
               _styledRow('حالة الطلب', _statusLabel(data['status']?.toString() ?? 'pending'), isLast: true),
             ]),
           ],
@@ -2212,30 +2158,53 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _imgPreview(BuildContext context, String base64) {
-    final bytes = base64Decode(base64);
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FullImagePage(imageBytes: bytes))),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Image.memory(bytes, width: 250, fit: BoxFit.cover),
-      ),
-    );
+    try {
+      final bytes = base64Decode(base64);
+      return GestureDetector(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FullImagePage(imageBytes: bytes))),
+        child: ClipRRect(borderRadius: BorderRadius.circular(15), child: Image.memory(bytes, width: 250, fit: BoxFit.cover)),
+      );
+    } catch (e) {
+      return const Icon(Icons.broken_image, size: 50);
+    }
   }
 }
 
-// كلاس عرض الصور (مصلح وكامل)
 class FullImagePage extends StatelessWidget {
   final Uint8List imageBytes;
+
   const FullImagePage({super.key, required this.imageBytes});
 
   Future<void> _downloadImage(BuildContext context) async {
     try {
-      final result = await ImageGallerySaver.saveImage(imageBytes, quality: 100);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['isSuccess'] ? 'تم حفظ الصورة!' : 'فشل الحفظ'), backgroundColor: Colors.green),
-      );
+      final status = await Permission.storage.request();
+      if (status.isGranted || await Permission.photos.request().isGranted) {
+        final result = await ImageGallerySaver.saveImage(
+          imageBytes,
+          quality: 100,
+          name: "Order_Image_${DateTime.now().millisecondsSinceEpoch}",
+        );
+        if (!context.mounted) return;
+        if (result['isSuccess'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم حفظ الصورة في الاستوديو بنجاح!'), backgroundColor: Colors.green),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('حدث خطأ أثناء الحفظ'), backgroundColor: Colors.red),
+          );
+        }
+      } else {
+         if (!context.mounted) return;
+         ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('لم يتم منح صلاحية الوصول للاستوديو'), backgroundColor: Colors.orange),
+          );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('حدث خطأ أثناء الحفظ')));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حدث خطأ أثناء الحفظ'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -2243,38 +2212,249 @@ class FullImagePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white, actions: [
-        IconButton(icon: const Icon(Icons.download), onPressed: () => _downloadImage(context)),
-      ]),
-      body: Center(child: InteractiveViewer(child: Image.memory(imageBytes, fit: BoxFit.contain))),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: const Text('الصورة'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: () => _downloadImage(context),
+            tooltip: 'حفظ الصورة في الجهاز',
+          ),
+        ],
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          child: Image.memory(
+            imageBytes,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
     );
   }
 }
 
-// كلاس الأرشيف (مصلح وكامل)
 class ArchivedOrdersPage extends StatelessWidget {
   const ArchivedOrdersPage({super.key});
+
+  Widget _smallChip(String title, String value, bool isDoneOrDelivered) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDoneOrDelivered ? Colors.white24 : kSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: isDoneOrDelivered ? Border.all(color: Colors.white54) : null,
+      ),
+      child: Text(
+        '$title: $value',
+        style: TextStyle(
+          fontSize: 15,
+          color: isDoneOrDelivered ? Colors.white : kDark,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'accepted':
+        return 'قيد التنفيذ';
+      case 'done':
+        return 'جاهز';
+      case 'delivered':
+        return 'تم التسليم';
+      default:
+        return 'لم يكتمل';
+    }
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'accepted':
+        return Colors.blue;
+      case 'done':
+        return Colors.green;
+      case 'delivered':
+        return Colors.teal;
+      default:
+        return Colors.orange;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6EFE8),
-      appBar: AppBar(title: const Text('الطلبات المؤرشفة')),
+      backgroundColor: kSoft,
+      appBar: AppBar(
+        title: const Text('الطلبات المؤرشفة'),
+      ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('orders').orderBy('updatedAt', descending: true).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('orders')
+            .orderBy('updatedAt', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final docs = snapshot.data!.docs.where((doc) => (doc.data() as Map)['archived'] == true).toList();
-          if (docs.isEmpty) return const Center(child: Text('لا توجد طلبات مؤرشفة'));
+          if (!snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(color: kPrimary),
+            );
+          }
+
+          final docs = snapshot.data!.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data['archived'] == true;
+          }).toList();
+
+          if (docs.isEmpty) {
+            return const Center(
+              child: Text(
+                'لا توجد طلبات مؤرشفة',
+                style: TextStyle(fontSize: 20, color: kDark),
+              ),
+            );
+          }
+
           return ListView.builder(
             padding: const EdgeInsets.all(14),
             itemCount: docs.length,
             itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
-              return Card(
-                child: ListTile(
-                  title: Text(data['customerName'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(data['branch'] ?? ''),
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OrderDetailsPage(docId: docs[index].id, data: data))),
+              final doc = docs[index];
+              final data = doc.data() as Map<String, dynamic>;
+
+              final customerName = data['customerName']?.toString() ?? '';
+              final phone = data['phone']?.toString() ?? '';
+              final orderType = data['orderType']?.toString() ?? '';
+              final deliveryDay = data['deliveryDay']?.toString() ?? '';
+              final deliveryDate = data['deliveryDate']?.toString() ?? '';
+              final deliveryTime = data['deliveryTime']?.toString() ?? '';
+              final period = data['period']?.toString() ?? '';
+              
+              final timeStr = "$deliveryTime $period".trim();
+              
+              final status = data['status']?.toString() ?? 'pending';
+              final branch = data['branch']?.toString() ?? 'استلام فرع الدور';
+
+              final isDoneOrDelivered = status == 'done' || status == 'delivered';
+              final cardColor = isDoneOrDelivered ? const Color(0xFF1B5E20) : Colors.white;
+              final textColor = isDoneOrDelivered ? Colors.white : kDark;
+
+              return InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => OrderDetailsPage(docId: doc.id, data: data),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(.07),
+                        blurRadius: 12,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: branch == 'توصيل' ? Colors.redAccent : (isDoneOrDelivered ? Colors.green.shade800 : kPrimary),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(24),
+                            topRight: Radius.circular(24),
+                          ),
+                        ),
+                        child: Text(
+                          branch,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (customerName.isNotEmpty)
+                              Text(
+                                customerName,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                            const SizedBox(height: 8),
+                            if (phone.isNotEmpty)
+                              Text(
+                                phone,
+                                style: TextStyle(fontSize: 16, color: textColor),
+                              ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                if (orderType.isNotEmpty) _smallChip('النوع', orderType, isDoneOrDelivered),
+                                if (deliveryDay.isNotEmpty) _smallChip('اليوم', deliveryDay, isDoneOrDelivered),
+                                if (deliveryDate.isNotEmpty) _smallChip('التاريخ', deliveryDate, isDoneOrDelivered),
+                                if (timeStr.isNotEmpty) _smallChip('الوقت', timeStr, isDoneOrDelivered),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDoneOrDelivered ? Colors.white24 : _statusColor(status).withOpacity(.13),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                _statusLabel(status),
+                                style: TextStyle(
+                                  color: isDoneOrDelivered ? Colors.white : _statusColor(status),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () async {
+                                await FirebaseFirestore.instance
+                                    .collection('orders')
+                                    .doc(doc.id)
+                                    .update({
+                                  'archived': false,
+                                  'updatedAt': FieldValue.serverTimestamp(),
+                                });
+                              },
+                              icon: Icon(Icons.unarchive_outlined, color: textColor),
+                              label: Text('إلغاء الأرشفة', style: TextStyle(color: textColor)),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: isDoneOrDelivered ? Colors.white70 : kDark),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
